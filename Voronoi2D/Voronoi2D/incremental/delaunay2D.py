@@ -12,7 +12,7 @@ class Delaunay2D:
                        center + radius * np.array((-1, +1))]
         self.triangles = {}
         self.circles = {}
-        self.neighbors = {}
+        #TODO = {}
 
         # The super triangles
         T1 = (0, 1, 3)
@@ -83,6 +83,7 @@ class Delaunay2D:
 
         # Triangulate the polygon
         new_triangles = []
+        new_neighbors = []
         for (e0, e1, tri_op) in boundary:
             T = (idx, e0, e1)
             self.circles[T] = self.circumcenter(T)
@@ -94,33 +95,43 @@ class Delaunay2D:
                     if neigh:
                         if e1 in neigh and e0 in neigh:
                             self.triangles[tri_op][i] = T
-                            self.neighbors[T] = neigh
-                            self.neighbors[neigh] = T
+                            #TODO[T] = neigh
+                            #TODO[neigh] = T
+                            #new_neighbors.append(neigh)
 
             new_triangles.append(T)
         N = len(new_triangles)
         for i, T in enumerate(new_triangles):
             self.triangles[T][1] = new_triangles[(i + 1) % N]  # Next neighbor
             self.triangles[T][2] = new_triangles[(i - 1) % N]  # Previous neighbor
+        
+        #TODO.append(new_neighbors)
 
     def exportTriangles(self):
         """Export the current list of Delaunay triangles with neighboring information
         """
-        triangles_with_neighbors = []
-        for (a, b, c), neighbors in self.neighbors.items():
+        triangles__ = []
+        neighbours__ = []
+        for (a, b, c) in self.triangles:
             if a > 3 and b > 3 and c > 3:
-                triangle = (a - 4, b - 4, c - 4)
-                neighbors = [n - 4 for n in neighbors if n is not None]
-                triangles_with_neighbors.append((triangle, neighbors))
-        return triangles_with_neighbors
+                triangles__.append((a - 4, b - 4, c - 4))
+                my_n = []
+                for (a_n, b_n, c_n) in self.triangles[(a, b, c)]:
+                    if a_n > 3 and b_n > 3 and c_n > 3:
+                        my_n.append((a_n - 4, b_n - 4, c_n -4))
+                    else:
+                        my_n.append(None)
+                neighbours__.append(my_n)
+        return (triangles__, neighbours__)
 
     def generateVoronoi(self):
         """Generate the Voronoi diagram from the Delaunay triangulation"""
         voronoi_edges = []
-        for (a, b, c), neighbors in self.neighbors.items():
+        for i, (a, b, c) in enumerate(self.triangles):
             if a > 3 and b > 3 and c > 3:
+                neighbors = self.triangles[(a, b, c)]
                 for n in neighbors:
-                    if n is not None:
+                    if n is not None and len(n) > len((a, b, c)):
                         circumcenter_a = self.circles[(a, b, c)][0]
                         circumcenter_b = self.circles[n][0]
                         voronoi_edge = (circumcenter_a, circumcenter_b)

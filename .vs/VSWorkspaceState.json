@@ -1,6 +1,10 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\Voronoi2D",
+    "\\Voronoi2D\\Voronoi2D",
+    "\\Voronoi2D\\Voronoi2D\\incremental"
   ],
+  "SelectedNode": "\\Voronoi2D\\Voronoi2D.sln",
   "PreviewInSolutionExplorer": false
 }

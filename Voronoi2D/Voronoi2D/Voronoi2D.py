@@ -27,7 +27,7 @@ def mesh_inc(surface, numSeeds):
         dt.addPoint(s)
         pygame.draw.circle(surface, "#CC00CC", s, 5)
     asd = dt.generateVoronoi()
-    for t in dt.exportTriangles():
+    for t in dt.exportTriangles()[0]:
         print(t)
         pygame.draw.polygon(surface=surface, color="Green", points=[seeds[t[0]], seeds[t[1]], seeds[t[2]]], width=1)
 
