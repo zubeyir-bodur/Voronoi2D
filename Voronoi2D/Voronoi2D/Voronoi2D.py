@@ -43,7 +43,7 @@ def add_inc(surface):
         dt.addPoint(s)
         pygame.draw.circle(surface, "#CC00CC", s, 5)
 
-    for t in dt.exportTriangles():
+    for t in dt.exportTriangles()[0]:
         print(t)
         pygame.draw.polygon(surface=surface, color="Green", points=[seeds[t[0]], seeds[t[1]], seeds[t[2]]], width=1)
 
@@ -54,7 +54,7 @@ def clear(surface):
     seeds = []
 
 def get_font(size):  # Returns Press-Start-2P in the desired size
-    return pygame.font.Font("assets/font.ttf", size)
+    return pygame.font.Font("assets/Roboto-Regular.ttf", size)
 
 
 def blitRotateCenter(surf, image, topleft, angle):
