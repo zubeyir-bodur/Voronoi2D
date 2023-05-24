@@ -56,7 +56,7 @@ def clear(surface):
     global seeds
     seeds = []
 
-def get_font(size):  # Returns Press-Start-2P in the desired size
+def get_font(size):
     return pygame.font.Font("assets/Karla-Regular.ttf", size)
 
 
@@ -157,7 +157,7 @@ def inc_screen():
 
 def main_menu():
     pygame.display.set_caption("CS 478 Project - Implementing Three Voronoi Diagram Computation Algorithms " 
-                               +  "and Comparing Their Performance")
+                               + "and Comparing Their Performance")
     screen.fill((161, 200, 207))
     while True:
         mouse = pygame.mouse.get_pos()
