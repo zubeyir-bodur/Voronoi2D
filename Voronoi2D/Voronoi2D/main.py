@@ -5,7 +5,7 @@ import pygame
 import numpy as np
 
 from Button import Button
-from incremental.delaunay2D import Delaunay2D
+from incremental.voronooi2Dincremental import Voronoi2DIncremental
 
 SCREEN_HEIGHT = 768
 SCREEN_WIDTH = 1280
@@ -14,30 +14,33 @@ pygame.init()
 screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])
 clock = pygame.time.Clock()
 zoom = 2
-
+spacing = 100
 
 def mesh_inc(surface, numSeeds):
     radius = SCREEN_HEIGHT
-    seeds = (radius + 240, radius - 10) * np.random.random((numSeeds, 2)) + 5
+    seeds = (radius + 250 - 2*spacing, radius  - 2*spacing) * np.random.random((numSeeds, 2)) + spacing
     center = np.mean(seeds, axis=0)
-    dt = Delaunay2D(center, 50 * radius)
+    dt = Voronoi2DIncremental(center, 50 * radius)
     print("Adding points...")
     print(seeds)
     for s in seeds:
         dt.addPoint(s)
         pygame.draw.circle(surface, "#FF0000", s, 7)
-    asd = dt.generateVoronoi()
+    voronoi = dt.generateVoronoi()
     for t in dt.exportTriangles()[0]:
         print(t)
         pygame.draw.polygon(surface=surface, color=(181, 230, 29), points=[seeds[t[0]], seeds[t[1]], seeds[t[2]]], width=2)
+    for v_e in voronoi:
+        print(v_e)
+        pygame.draw.line(surface=surface, color="#CC00FF", start_pos=v_e[0], end_pos=v_e[1], width=2)
 
 
 def add_inc(surface):
     surface.fill((76, 98, 122))
-    s = (random.randint(5, SCREEN_HEIGHT + 245), random.randint(5, SCREEN_HEIGHT-5))
+    s = (random.randint(spacing, SCREEN_HEIGHT + 250 - spacing), random.randint(spacing, SCREEN_HEIGHT-spacing))
     seeds.append(s)
     center = np.mean(seeds, axis=0)
-    dt = Delaunay2D(center, 50 * radius)
+    dt = Voronoi2DIncremental(center, 50 * radius)
     print(seeds)
     for s in seeds:
         dt.addPoint(s)

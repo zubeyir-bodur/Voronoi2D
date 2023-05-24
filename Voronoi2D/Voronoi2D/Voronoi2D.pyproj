@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>9addb53c-b8c3-41bd-9a3c-6eec4e8b0cc0</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Voronoi2D.py</StartupFile>
+    <StartupFile>main.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -22,8 +22,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Button.py" />
-    <Compile Include="incremental\delaunay2D.py" />
-    <Compile Include="Voronoi2D.py" />
+    <Compile Include="incremental\voronooi2Dincremental.py" />
+    <Compile Include="main.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="assets\" />

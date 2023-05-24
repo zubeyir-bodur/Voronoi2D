@@ -2,7 +2,7 @@ import numpy as np
 from math import sqrt
 
 
-class Delaunay2D:
+class Voronoi2DIncremental:
     def __init__(self, center=(0, 0), radius=36500):
         center = np.asarray(center)
         # Corners for super-triangles
@@ -12,7 +12,6 @@ class Delaunay2D:
                        center + radius * np.array((-1, +1))]
         self.triangles = {}
         self.circles = {}
-        #TODO = {}
 
         # The super triangles
         T1 = (0, 1, 3)
@@ -95,17 +94,12 @@ class Delaunay2D:
                     if neigh:
                         if e1 in neigh and e0 in neigh:
                             self.triangles[tri_op][i] = T
-                            #TODO[T] = neigh
-                            #TODO[neigh] = T
-                            #new_neighbors.append(neigh)
 
             new_triangles.append(T)
         N = len(new_triangles)
         for i, T in enumerate(new_triangles):
             self.triangles[T][1] = new_triangles[(i + 1) % N]  # Next neighbor
             self.triangles[T][2] = new_triangles[(i - 1) % N]  # Previous neighbor
-        
-        #TODO.append(new_neighbors)
 
     def exportTriangles(self):
         """Export the current list of Delaunay triangles with neighboring information
@@ -126,14 +120,15 @@ class Delaunay2D:
 
     def generateVoronoi(self):
         """Generate the Voronoi diagram from the Delaunay triangulation"""
-        voronoi_edges = []
+        # use a dict of edges to avoid duplicates
+        voronoi_edges = {}
         for i, (a, b, c) in enumerate(self.triangles):
             if a > 3 and b > 3 and c > 3:
                 neighbors = self.triangles[(a, b, c)]
-                for n in neighbors:
-                    if n is not None and len(n) > len((a, b, c)):
+                for (a_n, b_n, c_n) in neighbors:
+                    if a_n > 3 and b_n > 3 and c_n > 3:
                         circumcenter_a = self.circles[(a, b, c)][0]
-                        circumcenter_b = self.circles[n][0]
-                        voronoi_edge = (circumcenter_a, circumcenter_b)
-                        voronoi_edges.append(voronoi_edge)
+                        circumcenter_b = self.circles[(a_n, b_n, c_n)][0]
+                        voronoi_edge = (tuple(circumcenter_a), tuple(circumcenter_b))
+                        voronoi_edges[voronoi_edge] = 0
         return voronoi_edges
