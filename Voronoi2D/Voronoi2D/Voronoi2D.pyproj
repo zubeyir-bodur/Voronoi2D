@@ -30,7 +30,13 @@
     <Folder Include="incremental\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="assets\Cousine-Regular.ttf" />
+    <Content Include="assets\DroidSans.ttf" />
     <Content Include="assets\font.ttf" />
+    <Content Include="assets\Karla-Regular.ttf" />
+    <Content Include="assets\ProggyClean.ttf" />
+    <Content Include="assets\ProggyTiny.ttf" />
+    <Content Include="assets\Roboto-Medium.ttf" />
     <Content Include="assets\Roboto-Regular.ttf" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
