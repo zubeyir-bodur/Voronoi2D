@@ -90,7 +90,7 @@ class Voronoi2DFlipping:
         return
 
 
-    def addPointLexicographical(self):
+    def addPointToLexTriangulation(self):
         """ Updates the current index and adds the sorted point at the current index to the triangulation
         At the end, updates the convex hull
         """
