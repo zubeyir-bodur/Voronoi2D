@@ -6,6 +6,8 @@ import math
 
 from Button import Button
 from incremental.voronooi2Dincremental import Voronoi2DIncremental
+from flipping.voronooi2Dflip import Voronoi2DFlipping
+
 
 def clamp(num, min_value, max_value):
    return max(min(num, max_value), min_value)
@@ -70,19 +72,18 @@ def generate_flipping(surface, numSeeds):
     global radius
     generate_random_points(numSeeds)
     clock_start = time.time()
-    dt = Voronoi2DIncremental(center, 50 * radius)
-    for p in points:
-        dt.addPoint(p)
+    dt = Voronoi2DFlipping(points)
+    dt.flipAllEdges()
     voronoi_edges, voronoi_vertices = dt.generateVoronoi()
     clock_end = time.time()
-    for t in dt.exportTriangles()[0]:
-        pygame.draw.polygon(surface=surface, color=(181, 230, 29), points=[points[t[0]], points[t[1]], points[t[2]]], width=1)
-    for v_e in voronoi_edges:
-        pygame.draw.line(surface=surface, color="#CC00FF", start_pos=v_e[0], end_pos=v_e[1], width=2)    
-    for v_v in voronoi_vertices:
-        pygame.draw.circle(surface, "#CCCC11", v_v, 1)
-    for p in points:
-        pygame.draw.circle(surface, "#FF0000", p, 2)
+    #for t in dt.exportTriangles()[0]:
+    #    pygame.draw.polygon(surface=surface, color=(181, 230, 29), points=[points[t[0]], points[t[1]], points[t[2]]], width=1)
+    #for v_e in voronoi_edges:
+    #    pygame.draw.line(surface=surface, color="#CC00FF", start_pos=v_e[0], end_pos=v_e[1], width=2)    
+    #for v_v in voronoi_vertices:
+    #    pygame.draw.circle(surface, "#CCCC11", v_v, 1)
+    #for p in points:
+    #    pygame.draw.circle(surface, "#FF0000", p, 2)
     if TESTING:
         print("The Voronoi diagram with %d points took %f ms: " % (numSeeds, (clock_end - clock_start)*1000.0))
 

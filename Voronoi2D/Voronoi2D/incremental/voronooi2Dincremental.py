@@ -1,4 +1,3 @@
-from xml.etree.ElementTree import PI
 import numpy as np
 import math
 from math import acos, sqrt
