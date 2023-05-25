@@ -96,6 +96,13 @@ class Voronoi2DFlipping:
         """
         return
 
+
+    def lexicograhicalTriangulate(self, points):
+        """ 
+        Will return the lexicographical triangulation of points
+        """
+        return
+
     def flipAllEdges(self):
         return
 
