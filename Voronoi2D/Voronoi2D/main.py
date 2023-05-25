@@ -2,9 +2,13 @@ import sys
 import pygame
 import numpy as np
 import time
+import math
 
 from Button import Button
 from incremental.voronooi2Dincremental import Voronoi2DIncremental
+
+def clamp(num, min_value, max_value):
+   return max(min(num, max_value), min_value)
 
 
 def get_font(size):
@@ -18,18 +22,31 @@ pygame.init()
 screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])
 clock = pygame.time.Clock()
 zoom = 2
-spacing = 150
+spacing = 10
 NOP_Info = get_font(30).render("N: ", True, "Black")
 NOP_RECT = pygame.Rect(1150, 310, 140, 30)
-radius = 730
-center = (380, 380)
+radius = SCREEN_HEIGHT / 2
+center = ((SCREEN_HEIGHT + 250) / 2, SCREEN_HEIGHT / 2)
 points = []
 
-def generate_randomized_incremental(surface, numSeeds):
-    radius = SCREEN_HEIGHT
+def generate_random_points(numPoints):
+    global center
     global points
-    points = (radius + 250 - 2*spacing, radius  - 2*spacing) * np.random.random((numSeeds, 2)) + spacing
-    center = np.mean(points, axis=0)
+    random_numbers_btw_zero_and_two_pi = np.random.random(numPoints)*2*math.pi
+    random_numbers_btw_zero_and_radius_min_spacing = np.random.random(size=numPoints)
+    points.clear()
+    for i in range(numPoints):
+        theta__ = clamp(random_numbers_btw_zero_and_two_pi[i], 0, 2*math.pi)
+        radius__ = clamp(math.sqrt(random_numbers_btw_zero_and_radius_min_spacing[i])*(radius - spacing), 0, radius - spacing)
+        x_coord = radius__*math.cos(theta__) + center[0]
+        y_coord = radius__*math.sin(theta__) + center[1]
+        points.append(np.array([x_coord, y_coord]))
+
+
+def generate_randomized_incremental(surface, numSeeds):
+    global center
+    global radius
+    generate_random_points(numSeeds)
     clock_start = time.time()
     dt = Voronoi2DIncremental(center, 50 * radius)
     for p in points:
@@ -37,13 +54,13 @@ def generate_randomized_incremental(surface, numSeeds):
     voronoi_edges, voronoi_vertices = dt.generateVoronoi()
     clock_end = time.time()
     for t in dt.exportTriangles()[0]:
-        pygame.draw.polygon(surface=surface, color=(181, 230, 29), points=[points[t[0]], points[t[1]], points[t[2]]], width=2)
+        pygame.draw.polygon(surface=surface, color=(181, 230, 29), points=[points[t[0]], points[t[1]], points[t[2]]], width=1)
     for v_e in voronoi_edges:
         pygame.draw.line(surface=surface, color="#CC00FF", start_pos=v_e[0], end_pos=v_e[1], width=2)    
     for v_v in voronoi_vertices:
-        pygame.draw.circle(surface, "#CCCC11", v_v, 3)
+        pygame.draw.circle(surface, "#CCCC11", v_v, 1)
     for p in points:
-        pygame.draw.circle(surface, "#FF0000", p, 5)
+        pygame.draw.circle(surface, "#FF0000", p, 2)
     if TESTING:
         print("The Voronoi diagram with %d points took %f ms: " % (numSeeds, (clock_end - clock_start)*1000.0))
 
