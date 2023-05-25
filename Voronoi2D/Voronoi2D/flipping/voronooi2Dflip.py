@@ -264,33 +264,67 @@ class Voronoi2DFlipping:
 
 
     def addPointToLexTriangulation(self, point):
-       # register the vertex into coords
-       self.coords.append(point)
-       # find the added triangles & register circles
+        # register the vertex into coords
 
-       # base case
-       if len(self.coords) == 3:
-           self.triangles[(0, 1, 2)] = [None, None, None]
-           self.circles[(0, 1, 2)] = self.circumcenter((0, 1, 2))
-       elif len(self.coords) > 3:
-           # iterate all previous edges
-           all_edges = {}
-           for (a, b, c) in self.triangles:
-               for resp_vertex_in_cur_tri in (a, b, c):
-                   edge = tuple(item for item in (a, b, c) if item != resp_vertex_in_cur_tri)
-                   all_edges[edge] = 0
-           for (a, b, c) in self.triangles:
-               for resp_vertex_in_cur_tri in (a, b, c):
-                   edge = tuple(item for item in (a, b, c) if item != resp_vertex_in_cur_tri)
-                   # TODO check for intersection
-                   if True:
-                       # TODO find neighbours
-                       self.triangles[(self.currently_iterated_point_index, edge[0], edge[1])] = [None, None, None]
+        """
+        Adds a point to the existing triangulation by connecting it to the appropriate vertices.
 
-                       # TODO update the found neighbours' neighbours
+        Parameters:
+            point (tuple): The coordinates of the point to be added (x, y).
+            triangulation (list): List of triangles, each represented as a list of three vertices.
 
-       # go to next index
-       self.currently_iterated_point_index += 1
+        Returns:
+            None
+        """
+        new_triangle = [point]  # Create a new triangle with the added point
+
+        # Connect the point to the existing triangulation
+        for triangle in triangulation:
+            # Connect the point to the vertices of the current triangle
+            for i in range(3):
+                edge = (triangle[i], triangle[(i + 1) % 3])
+                if isEdgeVisible(point, edge, triangulation):
+                    new_triangle.append(edge[0])  # Add the vertex to the new triangle
+
+                    # Update neighboring triangles
+                    neighbor_index = (i + 2) % 3
+                    neighbor_triangle = triangulation[triangle[neighbor_index]]
+                    neighbor_edge = (triangle[(i + 1) % 3], triangle[i])
+                    neighbor_triangle[(neighbor_index + 1) % 3] = len(triangulation)  # Update neighbor's vertex
+                    neighbor_triangle[(neighbor_index + 2) % 3] = edge[0]  # Update neighbor's vertex
+                    new_triangle.append(neighbor_triangle[(neighbor_index + 2) % 3])  # Add neighbor's vertex to new triangle
+                
+
+        # Add the new triangle to the triangulation
+        triangulation.append(new_triangle)
+        
+
+        #self.coords.append(point)
+        ## find the added triangles & register circles
+       
+        ## base case
+        #if len(self.coords) == 3:
+        #    self.triangles[(0, 1, 2)] = [None, None, None]
+        #    self.circles[(0, 1, 2)] = self.circumcenter((0, 1, 2))
+        #elif len(self.coords) > 3:
+        #    # iterate all previous edges
+        #    all_edges = {}
+        #    for (a, b, c) in self.triangles:
+        #        for resp_vertex_in_cur_tri in (a, b, c):
+        #            edge = tuple(item for item in (a, b, c) if item != resp_vertex_in_cur_tri)
+        #            all_edges[edge] = 0
+        #    for (a, b, c) in self.triangles:
+        #        for resp_vertex_in_cur_tri in (a, b, c):
+        #            edge = tuple(item for item in (a, b, c) if item != resp_vertex_in_cur_tri)
+        #            # TODO check for intersection
+        #            if True:
+        #                # TODO find neighbours
+        #                self.triangles[(self.currently_iterated_point_index, edge[0], edge[1])] = [None, None, None]
+       
+        #                # TODO update the found neighbours' neighbours
+       
+        ## go to next index
+        #self.currently_iterated_point_index += 1
 
 
     def __lexicographicalTriangulate(self):
