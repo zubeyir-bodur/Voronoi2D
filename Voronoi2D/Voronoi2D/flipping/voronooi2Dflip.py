@@ -3,9 +3,8 @@ import numpy as np
 import math
 from math import acos, sqrt
 
-bigM = 1.0e+4
 
-class Voronoi2DIncremental:
+class Voronoi2DFlipping:
     def __init__(self, center=(0, 0), radius=36500):
         center = np.asarray(center)
         # Corners for super-triangles
@@ -80,63 +79,14 @@ class Voronoi2DIncremental:
         center, radius = self.circles[tri]
         return np.sum(np.square(center - p)) <= radius
 
-    # Bowyer-Watson increment
-    def addPoint(self, p):
-        p = np.asarray(p)
-        idx = len(self.coords)
-        self.coords.append(p)
+    def addPointLexicographical(self, p):
+        return
 
-        # Bad Triangles = triangles whose circumcircle contains p
-        bad_triangles = []
-        for T in self.triangles:
-            if self.inCircleTest(T, p):
-                bad_triangles.append(T)
+    def flipAllEdges(self):
+        return
 
-        # Compute the boundary polygon of bad triangles
-        boundary = []
-        T = bad_triangles[0]
-        edge = 0
-        # get the opposite triangle of this edge
-        while True:
-            # The opposite triangle
-            tri_op = self.triangles[T][edge]
-            if tri_op not in bad_triangles:
-                # Next edge in current triangle
-                boundary.append((T[(edge + 1) % 3], T[(edge - 1) % 3], tri_op))
-                edge = (edge + 1) % 3
-                # Check for loop
-                if boundary[0][0] == boundary[-1][1]:
-                    break
-            else:
-                # Next edge in the opposite triangle
-                edge = (self.triangles[tri_op].index(T) + 1) % 3
-                T = tri_op
-
-        # Delete illegal triangles
-        for T in bad_triangles:
-            del self.circles[T]
-            del self.triangles[T]
-
-        # Triangulate the polygon
-        new_triangles = []
-        new_neighbors = []
-        for (e0, e1, tri_op) in boundary:
-            T = (idx, e0, e1)
-            self.circles[T] = self.circumcenter(T)
-            self.triangles[T] = [tri_op, None, None]
-
-            # Set T as neighbor of opposite edge if a neighbor is on the same edge
-            if tri_op:
-                for i, neigh in enumerate(self.triangles[tri_op]):
-                    if neigh:
-                        if e1 in neigh and e0 in neigh:
-                            self.triangles[tri_op][i] = T
-
-            new_triangles.append(T)
-        N = len(new_triangles)
-        for i, T in enumerate(new_triangles):
-            self.triangles[T][1] = new_triangles[(i + 1) % N]  # Next neighbor
-            self.triangles[T][2] = new_triangles[(i - 1) % N]  # Previous neighbor
+    def getNextIllegalEdge(self):
+        return
 
     def exportTriangles(self):
         """Export the current list of Delaunay triangles with neighboring information
@@ -178,22 +128,21 @@ class Voronoi2DIncremental:
                     len_vec = sqrt(vec[0]**2 + vec[1]**2)
                     if self.inTriangleTest(circumcenter_a[0], circumcenter_a[1], (a, b, c)):
                         unit_vec = tuple([vec[0] / len_vec, vec[1] / len_vec])
-                        target_p_at_inf = tuple([circumcenter_a[0] + bigM*unit_vec[0], circumcenter_a[1] + bigM*unit_vec[1]])
+                        target_p_at_inf = tuple([circumcenter_a[0] + 2000*unit_vec[0], circumcenter_a[1] + 2000*unit_vec[1]])
                         voronoi_edges[(tuple(circumcenter_a), target_p_at_inf)] = 0
                     else:
                         if self.angleOfTriangleVertex((a, b, c), outer_vertices[i]) > math.pi/2.0:
                             opposite_unit_vec = tuple([(opposite_vec[0]) / len_vec, (opposite_vec[1]) / len_vec])
-                            target_p_at_inf = tuple([circumcenter_a[0] + bigM*opposite_unit_vec[0], circumcenter_a[1] + bigM*opposite_unit_vec[1]])
+                            target_p_at_inf = tuple([circumcenter_a[0] + 2000*opposite_unit_vec[0], circumcenter_a[1] + 2000*opposite_unit_vec[1]])
                             voronoi_edges[(tuple(circumcenter_a), target_p_at_inf)] = 0
                         else:
                             unit_vec = tuple([(vec[0]) / len_vec, (vec[1]) / len_vec])
-                            target_p_at_inf = tuple([circumcenter_a[0] + bigM*unit_vec[0], circumcenter_a[1] + bigM*unit_vec[1]])
+                            target_p_at_inf = tuple([circumcenter_a[0] + 2000*unit_vec[0], circumcenter_a[1] + 2000*unit_vec[1]])
                             voronoi_edges[(tuple(circumcenter_a), target_p_at_inf)] = 0
-                voronoi_vertices[tuple(circumcenter_a)] = 0
                 for (a_n, b_n, c_n) in neighbors:
                     if a_n > 3 and b_n > 3 and c_n > 3:
+                        voronoi_vertices[tuple(circumcenter_a)] = 0
                         circumcenter_b = self.circles[(a_n, b_n, c_n)][0]
-                        voronoi_vertices[tuple(circumcenter_b)] = 0
                         voronoi_edge = (tuple(circumcenter_a), tuple(circumcenter_b))
                         voronoi_edges[voronoi_edge] = 0
         return voronoi_edges, voronoi_vertices

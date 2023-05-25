@@ -22,12 +22,14 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Button.py" />
+    <Compile Include="flipping\voronooi2Dflip.py" />
     <Compile Include="incremental\voronooi2Dincremental.py" />
     <Compile Include="main.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="assets\" />
     <Folder Include="incremental\" />
+    <Folder Include="flipping\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="assets\Cousine-Regular.ttf" />
