@@ -265,15 +265,32 @@ class Voronoi2DFlipping:
 
     def addPointToLexTriangulation(self, point):
        # register the vertex into coords
-
+       self.coords.append(point)
        # find the added triangles & register circles
 
-       # update all neighbours
+       # base case
+       if len(self.coords) == 3:
+           self.triangles[(0, 1, 2)] = [None, None, None]
+           self.circles[(0, 1, 2)] = self.circumcenter((0, 1, 2))
+       elif len(self.coords) > 3:
+           # iterate all previous edges
+           all_edges = {}
+           for (a, b, c) in self.triangles:
+               for resp_vertex_in_cur_tri in (a, b, c):
+                   edge = tuple(item for item in (a, b, c) if item != resp_vertex_in_cur_tri)
+                   all_edges[edge] = 0
+           for (a, b, c) in self.triangles:
+               for resp_vertex_in_cur_tri in (a, b, c):
+                   edge = tuple(item for item in (a, b, c) if item != resp_vertex_in_cur_tri)
+                   # TODO check for intersection
+                   if True:
+                       # TODO find neighbours
+                       self.triangles[(self.currently_iterated_point_index, edge[0], edge[1])] = [None, None, None]
 
-       # update the convex hull
+                       # TODO update the found neighbours' neighbours
 
        # go to next index
-        self.currently_iterated_point_index += 1
+       self.currently_iterated_point_index += 1
 
 
     def __lexicographicalTriangulate(self):
