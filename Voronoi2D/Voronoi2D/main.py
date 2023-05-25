@@ -67,23 +67,23 @@ def generate_randomized_incremental(surface, numSeeds):
         print("The Voronoi diagram with %d points took %f ms: " % (numSeeds, (clock_end - clock_start)*1000.0))
 
 
+def generate_fortunes(surface, numSeeds):
+    global center
+    global radius
+    generate_random_points(numSeeds)
+    clock_start = time.time()
+    # TODO Fortune's Algorithm impl.
+    clock_end = time.time()
+    if TESTING:
+        print("The Voronoi diagram with %d points took %f ms: " % (numSeeds, (clock_end - clock_start)*1000.0))
+
 def generate_flipping(surface, numSeeds):
     global center
     global radius
     generate_random_points(numSeeds)
     clock_start = time.time()
-    dt = Voronoi2DFlipping(points)
-    dt.flipAllEdges()
-    voronoi_edges, voronoi_vertices = dt.generateVoronoi()
+    # TODO Flipping alg. impl.
     clock_end = time.time()
-    #for t in dt.exportTriangles()[0]:
-    #    pygame.draw.polygon(surface=surface, color=(181, 230, 29), points=[points[t[0]], points[t[1]], points[t[2]]], width=1)
-    #for v_e in voronoi_edges:
-    #    pygame.draw.line(surface=surface, color="#CC00FF", start_pos=v_e[0], end_pos=v_e[1], width=2)    
-    #for v_v in voronoi_vertices:
-    #    pygame.draw.circle(surface, "#CCCC11", v_v, 1)
-    #for p in points:
-    #    pygame.draw.circle(surface, "#FF0000", p, 2)
     if TESTING:
         print("The Voronoi diagram with %d points took %f ms: " % (numSeeds, (clock_end - clock_start)*1000.0))
 
@@ -94,8 +94,13 @@ def clear(surface):
     points = []
 
 
-def rand_inc_event_loop():
-    pygame.display.set_caption("Randomized Incremental Algorithm")
+def event_loop(current_menu):
+    if current_menu == 0:
+        pygame.display.set_caption("Randomized Incremental Algorithm")
+    elif current_menu == 1:
+        pygame.display.set_caption("Fortube's Algorithm")
+    elif current_menu == 2:
+        pygame.display.set_caption("Flipping Algorithm")
 
     fake_screen = screen.copy()
     pic = pygame.surface.Surface((SCREEN_HEIGHT + 250, SCREEN_HEIGHT))
@@ -150,7 +155,12 @@ def rand_inc_event_loop():
                     no = int(no_of_points)
                     consecutive_nexts = 0
                     clear(pic)
-                    generate_randomized_incremental(pic, no)
+                    if current_menu == 0:
+                        generate_randomized_incremental(pic, no)
+                    elif current_menu == 1:
+                        generate_fortunes(pic, no)
+                    elif current_menu == 2:
+                        generate_flipping(pic, no)
                 elif CLEAR.checkForInput(mouse):
                     consecutive_nexts = 0
                     clear(pic)
@@ -169,84 +179,6 @@ def rand_inc_event_loop():
 
         pygame.display.flip()
         clock.tick()
-
-
-def flipping_event_loop():
-    pygame.display.set_caption("Flipping Algorithm")
-
-    fake_screen = screen.copy()
-    pic = pygame.surface.Surface((SCREEN_HEIGHT + 250, SCREEN_HEIGHT))
-    pic.fill((76, 98, 122))
-    zoom_size = (round(SCREEN_HEIGHT / zoom), round(SCREEN_HEIGHT / zoom))
-
-    no_of_points = ""
-    active = False
-    zoomActive = False
-    consecutive_nexts = 0
-    while True:
-        mouse = pygame.mouse.get_pos()
-        fake_screen.fill((161, 200, 207))
-        fake_screen.blit(pic, (1, 1))
-        screen.blit(pygame.transform.scale(fake_screen, screen.get_rect().size), (0, 0))
-        if zoomActive:
-            zoom_area = pygame.Rect(0, 0, *zoom_size)
-            zoom_area.center = (mouse[0], mouse[1])
-            zoom_surf = pygame.Surface(zoom_area.size)
-            zoom_surf.blit(screen, (0, 0), zoom_area)
-            zoom_surf = pygame.transform.scale(zoom_surf, (SCREEN_HEIGHT + 251, SCREEN_HEIGHT))
-            screen.blit(zoom_surf, (0, 0))
-
-        NOP_TEXT = get_font(25).render(no_of_points, True, "Black")
-        pygame.draw.rect(screen, "Black", NOP_RECT, 2)
-        screen.blit(NOP_Info, (NOP_RECT.x - 50, NOP_RECT.y - 5))
-        screen.blit(NOP_TEXT, (NOP_RECT.x + 5, NOP_RECT.y))
-        NOP_RECT.w = max(100, NOP_TEXT.get_width() + 10)
-
-        GENERATE = Button(image=None, pos=(1150, 370), text_input="Generate",
-                      font=get_font(25), base_color="Black", hovering_color="Yellow")
-        CLEAR = Button(image=None, pos=(1148, 420), text_input="Clear All",
-                      font=get_font(25), base_color="Black", hovering_color="Yellow")
-        BACK = Button(image=None, pos=(1150, 725), text_input="Back to Main Menu",
-                      font=get_font(25), base_color="Black", hovering_color="Yellow")
-
-        for button in [GENERATE, CLEAR, BACK]:
-            button.changeColor(mouse)
-            button.update(screen)
-
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if BACK.checkForInput(mouse):
-                    consecutive_nexts = 0
-                    main_menu()
-                elif GENERATE.checkForInput(mouse):
-                    if no_of_points == "":
-                        no_of_points = "10"
-                    no = int(no_of_points)
-                    consecutive_nexts = 0
-                    clear(pic)
-                    generate_randomized_incremental(pic, no)
-                elif CLEAR.checkForInput(mouse):
-                    consecutive_nexts = 0
-                    clear(pic)
-                if NOP_RECT.collidepoint(event.pos):
-                    active = True
-                else:
-                    active = False
-                if mouse <= (SCREEN_HEIGHT + 251, SCREEN_HEIGHT):
-                    zoomActive = not zoomActive
-
-            elif event.type == pygame.KEYDOWN and active:
-                if event.key == pygame.K_BACKSPACE:
-                    no_of_points = no_of_points[:-1]
-                else:
-                    no_of_points += event.unicode
-
-        pygame.display.flip()
-        clock.tick()
-    return
 
 def main_menu():
     pygame.display.set_caption("CS 478 Project - Implementing Three Voronoi Diagram Computation Algorithms " 
@@ -282,9 +214,11 @@ def main_menu():
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if INC_BUTTON.checkForInput(mouse):
-                    rand_inc_event_loop()
+                    event_loop(0)
+                elif FORTUNE_BUTTON.checkForInput(mouse):
+                    event_loop(1)
                 elif FLIP_BUTTON.checkForInput(mouse):
-                    flipping_event_loop()
+                    event_loop(2)
                 elif QUIT.checkForInput(mouse):
                     pygame.quit()
                     sys.exit()
