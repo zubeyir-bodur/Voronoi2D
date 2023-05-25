@@ -183,12 +183,17 @@ def main_menu():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if INC_BUTTON.checkForInput(mouse):
                     rand_inc_event_loop()
+                elif FLIP_BUTTON.checkForInput(mouse):
+                    flipping_event_loop()
                 elif QUIT.checkForInput(mouse):
                     pygame.quit()
                     sys.exit()
                     
         pygame.display.flip()
         clock.tick()
+
+def flipping_event_loop():
+    return
 
 
 main_menu()

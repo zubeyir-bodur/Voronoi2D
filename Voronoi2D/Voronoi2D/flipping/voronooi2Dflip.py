@@ -14,6 +14,8 @@ class Voronoi2DFlipping:
                        center + radius * np.array((-1, +1))]
         self.triangles = {}
         self.circles = {}
+        self.currently_iterated = 0
+        self.convex_hull_prev
 
         # The super triangles
         T1 = (0, 1, 3)
@@ -79,7 +81,19 @@ class Voronoi2DFlipping:
         center, radius = self.circles[tri]
         return np.sum(np.square(center - p)) <= radius
 
-    def addPointLexicographical(self, p):
+
+    def registerPoints(self, points):
+        """ Gets the array of unsorted random points, and sorts them and stores them inside
+        self.coords, which will be sorted w.r.t x axis first, then y axis if x values are the same, 
+        in ascencing order. Sorting will be done with numpy.lexsort()
+        """
+        return
+
+
+    def addPointLexicographical(self):
+        """ Updates the current index and adds the sorted point at the current index to the triangulation
+        At the end, updates the convex hull
+        """
         return
 
     def flipAllEdges(self):
