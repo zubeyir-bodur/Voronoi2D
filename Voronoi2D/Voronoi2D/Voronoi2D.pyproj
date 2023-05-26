@@ -24,11 +24,13 @@
     <Compile Include="Button.py" />
     <Compile Include="flipping\flipping2.py" />
     <Compile Include="flipping\voronooi2Dflip.py" />
+    <Compile Include="fortunes\voronooi2Dfortunes.py" />
     <Compile Include="incremental\voronooi2Dincremental.py" />
     <Compile Include="main.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="assets\" />
+    <Folder Include="fortunes\" />
     <Folder Include="incremental\" />
     <Folder Include="flipping\" />
   </ItemGroup>

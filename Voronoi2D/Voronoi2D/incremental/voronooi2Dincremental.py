@@ -1,6 +1,5 @@
 import numpy as np
 import math
-from math import acos, sqrt
 
 bigM = 1.0e+4
 
@@ -66,9 +65,9 @@ class Voronoi2DIncremental:
         a_vec = (Ps[0][0] - Ps[1][0], Ps[0][1] - Ps[1][1]) #P1 - P2
         b_vec = (Ps[0][0] - Ps[2][0], Ps[0][1] - Ps[2][1]) #P1 - P3
         dot_prod = a_vec[0]*b_vec[0] + a_vec[1]*b_vec[1]
-        length_a = sqrt(a_vec[0]**2 + a_vec[1]**2)
-        length_b = sqrt(b_vec[0]**2 + b_vec[1]**2)
-        theta = acos(dot_prod / (length_a*length_b))
+        length_a = math.sqrt(a_vec[0]**2 + a_vec[1]**2)
+        length_b = math.sqrt(b_vec[0]**2 + b_vec[1]**2)
+        theta = math.acos(dot_prod / (length_a*length_b))
         if theta > math.pi:
             theta = 2*math.pi - theta
         return theta
@@ -185,7 +184,7 @@ class Voronoi2DIncremental:
                     u = (self.coords[outer_e[0]]+self.coords[outer_e[1]]) / 2.0
                     opposite_vec = tuple([circumcenter_a[0] - u[0], circumcenter_a[1] - u[1]]) # from u to C
                     vec =  tuple([u[0] - circumcenter_a[0], u[1] - circumcenter_a[1]]) # from C to u
-                    len_vec = sqrt(vec[0]**2 + vec[1]**2)
+                    len_vec = math.sqrt(vec[0]**2 + vec[1]**2)
                     if self.in_triangle_test(circumcenter_a[0], circumcenter_a[1], (a, b, c)):
                         unit_vec = tuple([vec[0] / len_vec, vec[1] / len_vec])
                         target_p_at_inf = tuple([circumcenter_a[0] + bigM*unit_vec[0], circumcenter_a[1] + bigM*unit_vec[1]])
