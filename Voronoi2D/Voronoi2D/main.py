@@ -66,13 +66,10 @@ def step_randomized_incremental(surface):
     p = get_random_point()
     points.append(p)
     clock_start = time.time()
-    incremental_dt.addPoint(p)
-    #incremental_dt.reset(center, radius * 50)
-    #for point_ in points:
-    #    incremental_dt.addPoint(point_)
-    voronoi_edges, voronoi_vertices = incremental_dt.generateVoronoi()
+    incremental_dt.add_point(p)
+    voronoi_edges, voronoi_vertices = incremental_dt.generate_voronoi()
     clock_end = time.time()
-    for t in incremental_dt.exportTriangles()[0]:
+    for t in incremental_dt.export_triangles()[0]:
         pygame.draw.polygon(surface=surface, color=(181, 230, 29), points=[points[t[0]], points[t[1]], points[t[2]]], width=1)
     for v_e in voronoi_edges:
         pygame.draw.line(surface=surface, color="#CC00FF", start_pos=v_e[0], end_pos=v_e[1], width=2)    
@@ -92,10 +89,10 @@ def generate_randomized_incremental(surface, numSeeds):
     center = np.mean(points)
     incremental_dt.reset(center, radius * 50)
     for p in points:
-        incremental_dt.addPoint(p)
-    voronoi_edges, voronoi_vertices = incremental_dt.generateVoronoi()
+        incremental_dt.add_point(p)
+    voronoi_edges, voronoi_vertices = incremental_dt.generate_voronoi()
     clock_end = time.time()
-    for t in incremental_dt.exportTriangles()[0]:
+    for t in incremental_dt.export_triangles()[0]:
         pygame.draw.polygon(surface=surface, color=(181, 230, 29), points=[points[t[0]], points[t[1]], points[t[2]]], width=1)
     for v_e in voronoi_edges:
         pygame.draw.line(surface=surface, color="#CC00FF", start_pos=v_e[0], end_pos=v_e[1], width=2)    

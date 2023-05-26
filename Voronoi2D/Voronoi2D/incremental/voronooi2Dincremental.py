@@ -6,24 +6,8 @@ bigM = 1.0e+4
 
 class Voronoi2DIncremental:
     def __init__(self, center=(0, 0), radius=36500):
-        center = np.asarray(center)
-        # Corners for super-triangles
-        self.coords = [center + radius * np.array((-1, -1)),
-                       center + radius * np.array((+1, -1)),
-                       center + radius * np.array((+1, +1)),
-                       center + radius * np.array((-1, +1))]
-        self.triangles = {}
-        self.circles = {}
-
-        # The super triangles
-        T1 = (0, 1, 3)
-        T2 = (2, 3, 1)
-        self.triangles[T1] = [T2, None, None]
-        self.triangles[T2] = [T1, None, None]
-
-        # Compute circumcircles
-        for t in self.triangles:
-            self.circles[t] = self.circumcenter(t)
+        self.reset(center, radius)
+    
 
     def reset(self, center, radius):
         center = np.asarray(center)
@@ -32,20 +16,17 @@ class Voronoi2DIncremental:
                        center + radius * np.array((+1, -1)),
                        center + radius * np.array((+1, +1)),
                        center + radius * np.array((-1, +1))]
-        del self.triangles
-        del self.circles
         self.triangles = {}
         self.circles = {}
-
         # The super triangles
         T1 = (0, 1, 3)
         T2 = (2, 3, 1)
         self.triangles[T1] = [T2, None, None]
         self.triangles[T2] = [T1, None, None]
-
         # Compute circumcircles
         for t in self.triangles:
             self.circles[t] = self.circumcenter(t)
+    
 
     def circumcenter(self, tri):
         pts = np.asarray([self.coords[v] for v in tri])
@@ -63,17 +44,20 @@ class Voronoi2DIncremental:
         radius = np.sum(np.square(pts[0] - center))
         return (center, radius)
 
+
     def area(self, x1, y1, x2, y2, x3, y3):
         return abs((x1*(y2-y3) + x2*(y3-y1)+ x3*(y1-y2))/2.0)
 
-    def outerVerticesOfTriangle(self, tri_indices):
+
+    def outer_vertices_of_triangle(self, tri_indices):
         outsides = []
         for i, neigh in enumerate(self.triangles[tri_indices]):
             if neigh == None or neigh[0] <= 3 or neigh[1] <= 3 or neigh[2] <= 3:
                 outsides.append(tri_indices[i])
         return outsides
 
-    def angleOfTriangleVertex(self, tri_indices, resp_tri_index):
+
+    def angle_of_vertex(self, tri_indices, resp_tri_index):
         P1 = self.coords[resp_tri_index]
         Ps = [P1]
         for idx in tri_indices:
@@ -89,7 +73,8 @@ class Voronoi2DIncremental:
             theta = 2*math.pi - theta
         return theta
 
-    def inTriangleTest(self, x, y, tri_indices):
+
+    def in_triangle_test(self, x, y, tri_indices):
         A = self.area(self.coords[tri_indices[0]][0], self.coords[tri_indices[0]][1], self.coords[tri_indices[1]][0], self.coords[tri_indices[1]][1], self.coords[tri_indices[2]][0], self.coords[tri_indices[2]][1])
         A1 = self.area(x, y, self.coords[tri_indices[1]][0], self.coords[tri_indices[1]][1], self.coords[tri_indices[2]][0], self.coords[tri_indices[2]][1])
         A2 = self.area(self.coords[tri_indices[0]][0], self.coords[tri_indices[0]][1], x, y, self.coords[tri_indices[2]][0], self.coords[tri_indices[2]][1])
@@ -97,12 +82,13 @@ class Voronoi2DIncremental:
         return (A == A1 + A2 + A3)
 
 
-    def inCircleTest(self, tri, p):
+    def circumcircle_test(self, tri, p):
         center, radius = self.circles[tri]
         return np.sum(np.square(center - p)) <= radius
 
+
     # Bowyer-Watson increment
-    def addPoint(self, p):
+    def add_point(self, p):
         p = np.asarray(p)
         idx = len(self.coords)
         self.coords.append(p)
@@ -110,7 +96,7 @@ class Voronoi2DIncremental:
         # Bad Triangles = triangles whose circumcircle contains p
         bad_triangles = []
         for T in self.triangles:
-            if self.inCircleTest(T, p):
+            if self.circumcircle_test(T, p):
                 bad_triangles.append(T)
 
         # Compute the boundary polygon of bad triangles
@@ -158,8 +144,9 @@ class Voronoi2DIncremental:
         for i, T in enumerate(new_triangles):
             self.triangles[T][1] = new_triangles[(i + 1) % N]  # Next neighbor
             self.triangles[T][2] = new_triangles[(i - 1) % N]  # Previous neighbor
+    
 
-    def exportTriangles(self):
+    def export_triangles(self):
         """Export the current list of Delaunay triangles with neighboring information
         """
         triangles__ = []
@@ -176,9 +163,11 @@ class Voronoi2DIncremental:
                 neighbours__.append(my_n)
         return (triangles__, neighbours__)
 
-    def generateVoronoi(self):
-        """Generate the Voronoi diagram from the Delaunay triangulation"""
-        # use a dict of edges to avoid duplicates
+
+    def generate_voronoi(self):
+        """
+        Generate the Voronoi diagram from the Delaunay triangulation
+        """
         voronoi_edges = {}
         voronoi_vertices = {}
         for (a, b, c) in self.triangles:
@@ -186,7 +175,7 @@ class Voronoi2DIncremental:
                 neighbors = self.triangles[(a, b, c)]
                 circumcenter_a = self.circles[(a, b, c)][0]
                 triangle_edges = [(self.coords[a], self.coords[b]), (self.coords[a], self.coords[c]), (self.coords[b], self.coords[c])]
-                outer_vertices = self.outerVerticesOfTriangle((a, b, c))
+                outer_vertices = self.outer_vertices_of_triangle((a, b, c))
                 outer_edges = []
                 for ov in outer_vertices:
                     for e in ((a, b), (a ,c), (b, c)):
@@ -197,12 +186,12 @@ class Voronoi2DIncremental:
                     opposite_vec = tuple([circumcenter_a[0] - u[0], circumcenter_a[1] - u[1]]) # from u to C
                     vec =  tuple([u[0] - circumcenter_a[0], u[1] - circumcenter_a[1]]) # from C to u
                     len_vec = sqrt(vec[0]**2 + vec[1]**2)
-                    if self.inTriangleTest(circumcenter_a[0], circumcenter_a[1], (a, b, c)):
+                    if self.in_triangle_test(circumcenter_a[0], circumcenter_a[1], (a, b, c)):
                         unit_vec = tuple([vec[0] / len_vec, vec[1] / len_vec])
                         target_p_at_inf = tuple([circumcenter_a[0] + bigM*unit_vec[0], circumcenter_a[1] + bigM*unit_vec[1]])
                         voronoi_edges[(tuple(circumcenter_a), target_p_at_inf)] = 0
                     else:
-                        if self.angleOfTriangleVertex((a, b, c), outer_vertices[i]) > math.pi/2.0:
+                        if self.angle_of_vertex((a, b, c), outer_vertices[i]) > math.pi/2.0:
                             opposite_unit_vec = tuple([(opposite_vec[0]) / len_vec, (opposite_vec[1]) / len_vec])
                             target_p_at_inf = tuple([circumcenter_a[0] + bigM*opposite_unit_vec[0], circumcenter_a[1] + bigM*opposite_unit_vec[1]])
                             voronoi_edges[(tuple(circumcenter_a), target_p_at_inf)] = 0
