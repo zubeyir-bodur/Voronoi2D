@@ -5,8 +5,6 @@ VisualStudioVersion = 17.6.33712.159
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Voronoi2D", "Voronoi2D\Voronoi2D.pyproj", "{9ADDB53C-B8C3-41BD-9A3C-6EEC4E8B0CC0}"
 EndProject
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "DelaunayOriginal", "DelaunayOriginal\DelaunayOriginal.pyproj", "{7A5EF8CB-7F65-4D9D-9D61-B108B112F9C0}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,8 +13,6 @@ Global
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{9ADDB53C-B8C3-41BD-9A3C-6EEC4E8B0CC0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9ADDB53C-B8C3-41BD-9A3C-6EEC4E8B0CC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7A5EF8CB-7F65-4D9D-9D61-B108B112F9C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7A5EF8CB-7F65-4D9D-9D61-B108B112F9C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
