@@ -1,3 +1,4 @@
+from sqlite3 import apilevel
 import numpy as np
 import math
 from math import acos, sqrt
@@ -110,6 +111,16 @@ class Voronoi2DFlipping:
         return (A == A1 + A2 + A3)
 
 
+    def point_location(self, point):
+        """
+        Iterative point location for the triangulation
+        """
+        for (a, b, c) in self.triangles:
+            if self.in_triangle_test(point, (a, b, c)):
+                return (a, b, c)
+        return None
+
+
     def on_triangle_edge_test(self, point, tri_indices):
         """
         Returns the edge if on edge, otherwise returns None
@@ -132,12 +143,75 @@ class Voronoi2DFlipping:
         return np.sum(np.square(center - p)) <= radius
 
 
+    def get_neighbour_from_edge(self, common_edge, tri_indices):
+        """
+        Returns the neighbour of tri along the edge. 
+        Also gives the indices & vertices of diagonals
+        returns-> 
+        2-tuple:diagonal_edge, 
+        2-tuple:pos of diagonals in the triangle tuples, 
+        3_tuple: adjacent triangle
+        """
+        assert((common_edge[0] in tri_indices) and (common_edge[1] in tri_indices))
+        vert_opposing_edge = -1
+        pos_vert_opposing_edge = -1
+        vert_opposing_edge_for_adj = -1
+        pos_vert_opposing_edge_for_adj  = -1
+        for i, idx in enumerate(tri_indices):
+            if idx != common_edge[0] and idx != common_edge[1]:
+                vert_opposing_edge = idx
+                pos_vert_opposing_edge = i
+                break
+        adj_tri_indices = self.triangles[tri_indices][pos_vert_opposing_edge]
+        if adj_tri_indices != None:
+            for i, idx in enumerate(adj_tri_indices):
+                if idx != common_edge[0] and idx != common_edge[1]:
+                    vert_opposing_edge_for_adj = idx
+                    pos_vert_opposing_edge_for_adj = i
+                    break
+        return (vert_opposing_edge, vert_opposing_edge_for_adj), (pos_vert_opposing_edge, pos_vert_opposing_edge_for_adj), adj_tri_indices
+
     def get_neighbours_of_edge(self, common_edge, t1, t2):
         """ 
         Retrieves the neighbours of a triangles of a common edge.
         Throws an error if t1 and t2 do not contain the common edge
+        No error is thrown if either t1 or t2 is None. Both of them
+        can't be None at the same time thou
+                 diag of t1
+                 / \\           
+            N1  /   \\  N2
+               /  t1 \\
+              /       \\
+             /_________\\
+            c0          c1
+            \\          /
+             \\   t2   /
+              \\      /
+            N3 \\    /  N4
+                \\  /
+                 \\/
+                 diag of t2
         """
-        assert((common_edge[0] in t1) and (common_edge[1] in t1) and(common_edge[0] in t2) and(common_edge[1] in t2))
+        if t2 != None:
+            assert((common_edge[0] in t1) and (common_edge[1] in t1) and(common_edge[0] in t2) and(common_edge[1] in t2))
+        else:
+            assert(t1 != None)
+            assert((common_edge[0] in t1) and (common_edge[1] in t1))
+            diag_of_t1 = filter(lambda x: x not in common_edge, t1)[0]
+            for i in range(3):
+                if t1[i] == diag_of_t1:
+                    assert(self.triangles[t1][i] == None)
+                    break
+        if t1 != None:
+            assert((common_edge[0] in t1) and (common_edge[1] in t1))
+        else:
+            assert(t2 != None)
+            assert((common_edge[0] in t2) and (common_edge[1] in t2))
+            diag_of_t2 = filter(lambda x: x not in common_edge, t2)[0]
+            for i in range(3):
+                if t2[i] == diag_of_t2:
+                    assert(self.triangles[t2][i] == None)
+                    break
         # t1's neighbours
         N1 = None     
         N1_index = -1 # index of N1 that points to t1
@@ -148,37 +222,39 @@ class Voronoi2DFlipping:
         N3_index = -1 # index of N3 that points to t2
         N4 = None
         N4_index = -1 # index of N4 that points to t2
-        for i, x in enumerate(t1):
-            if x == common_edge[1]:
-                N1 = self.triangles[t1][i] # tri in front of common_edge_1 for t1
-                for j, (ja, jb, jc) in enumerate(self.triangles[N1]):
-                    if (ja, jb, jc) == t1:
-                        N1_index = j
-        for i, x in enumerate(t1):
-            if x == common_edge[0]:
-                N2 = self.triangles[t1][i] # tri in front of common_edge_0 for t1
-                for j, (ja, jb, jc) in enumerate(self.triangles[N2]):
-                    if (ja, jb, jc) == t1:
-                        N2_index = j
-        for i, x in enumerate(t2):
-            if x == common_edge[1]:
-                N3 = self.triangles[t2][i] # tri in front of common_edge_1 for t2
-                for j, (ja, jb, jc) in enumerate(self.triangles[N3]):
-                    if (ja, jb, jc) == t2:
-                        N3_index = j
-        for i, x in enumerate(t1):
-            if x == common_edge[0]:
-                N4 = self.triangles[t1][i] # tri in front of common_edge_0 for t2
-                for j, (ja, jb, jc) in enumerate(self.triangles[N4]):
-                    if (ja, jb, jc) == t2:
-                        N4_index = j
+        if t1 != None:
+            for i, x in enumerate(t1):
+                if x == common_edge[1]:
+                    N1 = self.triangles[t1][i] # tri in front of common_edge_1 for t1
+                    for j, (ja, jb, jc) in enumerate(self.triangles[N1]):
+                        if (ja, jb, jc) == t1:
+                            N1_index = j
+                elif x == common_edge[0]:
+                    N2 = self.triangles[t1][i] # tri in front of common_edge_0 for t1
+                    for j, (ja, jb, jc) in enumerate(self.triangles[N2]):
+                        if (ja, jb, jc) == t1:
+                            N2_index = j
+        if t2 != None:
+            for i, x in enumerate(t2):
+                if x == common_edge[1]:
+                    N3 = self.triangles[t2][i] # tri in front of common_edge_1 for t2
+                    for j, (ja, jb, jc) in enumerate(self.triangles[N3]):
+                        if (ja, jb, jc) == t2:
+                            N3_index = j
+                elif x == common_edge[0]:
+                    N4 = self.triangles[t1][i] # tri in front of common_edge_0 for t2
+                    for j, (ja, jb, jc) in enumerate(self.triangles[N4]):
+                        if (ja, jb, jc) == t2:
+                            N4_index = j
         return N1, N1_index, N2, N2_index, N3, N3_index, N4, N4_index
 
 
     def flip_edge(self, common_edge, diagonal, t1, t2):
         """ 
         Just flips an edge. Doesn't check for legality.
+        Throws an error if diagonals were not given from t1 to t2
         """
+        assert((diagonal[0] in t1) and (diagonal[1] in t2))
         N1, N1_index, N2, N2_index, N3, N3_index, N4, N4_index = self.get_neighbours_of_edge(common_edge, t1, t2)
         self.triangles.pop(t1)
         self.triangles.pop(t2)
@@ -207,23 +283,55 @@ class Voronoi2DFlipping:
         new triangles and then updates the neighbours.
         Returns the index of the generated triangles as list
         Throws an error if the point lies on an edge, or the point is outside
-        """
-        """
-        triangle1 = [pi, pj, pr]
-        triangle2 = [pj, pk, pr]
-        triangle3 = [pk, pi, pr]
-        # Replace the original triangle with the new triangles in T
-        for triangle in T:
-            if pi in triangle and pj in triangle and pk in triangle:
-                T.remove(triangle)
-        T.append(triangle1)
-        T.append(triangle2)
-        T.append(triangle3)
-        return T
+                  a
+                 / \\           
+            N1  /   \\  N2
+               /T1.T2\\
+              /       \\
+             /____T3___\\
+            b     N3     c
         """
         assert(self.on_triangle_edge_test(point, tri_indices) == None)
         assert(self.in_triangle_test(point[0], point[1], tri_indices))
-        return [None, None, None]
+        p_index = len(self.coords)
+        self.coords.append(point)
+        a, b, c = tri_indices
+        T1 = (a, b, p_index)
+        T2 = (c, a, p_index)
+        T3 = (b, c, p_index)
+        N1 = self.triangles[(a, b, c)][2] # adjacent to T1
+        N1_index = -1
+        N2 = self.triangles[(a, b, c)][1] # adjacent to T2
+        N2_index = -1
+        N3 = self.triangles[(a, b, c)][0] # adjacent to T3
+        N3_index = -1
+        if N1 != None:
+            for j, (ja, jb, jc) in enumerate(self.triangles[N1]):
+                if (ja, jb, jc) == tri_indices:
+                    N1_index = j
+        if N2 != None:
+            for j, (ja, jb, jc) in enumerate(self.triangles[N2]):
+                if (ja, jb, jc) == tri_indices:
+                    N2_index = j
+        if N3 != None:
+            for j, (ja, jb, jc) in enumerate(self.triangles[N3]):
+                if (ja, jb, jc) == tri_indices:
+                    N3_index = j
+        self.triangles.pop(tri_indices)
+        self.circles.pop(tri_indices)
+        self.triangles[T1] = [T3, T2, N1]
+        self.circles[T1] = self.circumcenter(T1)
+        if N1 != None and N1_index != -1:
+            self.triangles[N1][N1_index] = T1
+        self.triangles[T2] = [T1, T3, N2]
+        self.circles[T2] = self.circumcenter(T2)
+        if N2 != None and N2_index != -1:
+            self.triangles[N2][N2_index] = T2
+        self.triangles[T3] = [T2, T1, N3]
+        self.circles[T3] = self.circumcenter(T3)
+        if N3 != None and N3_index != -1:
+            self.triangles[N3][N3_index] = T3
+        return T1, T2, T3
 
 
     def register_point_and_split_triangles_into_four_from_edge(self, common_edge, diagonal, t1, t2, point):
@@ -235,51 +343,131 @@ class Voronoi2DFlipping:
         N3 and N4 are neighbours of t1 other than t1
         Throws an error if the point is not on the common edge
         Throws an error if the common edge is actually not the common edge
+        Throws an error if the diagonal vertices are not given in order, from t1 to t2
+        t2 can be None, but t1 definetely can't be None, it throws an error otherwise
+                 diag0
+                 /|\\           
+            N1  / | \\  N2
+               /T1|T2\\
+              /   |   \\----->t1
+             /____.____\\
+            c0    |     c1
+            \\ T3 | T4  /
+             \\   |    /---->t2
+              \\  |   /
+            N3 \\ |  /  N4
+                \\| /
+                 \\/
+                 diag1
         """
+        assert(t1 != None)
+        if t2 != None:
+            assert(diagonal[0] in t1 and diagonal[1] in t2)
+            assert((common_edge[0] in t1) and (common_edge[1] in t1) and(common_edge[0] in t2) and(common_edge[1] in t2))
+            assert(self.on_triangle_edge_test(point, t1) == common_edge)
+            assert(self.on_triangle_edge_test(point, t2) == common_edge)
+            p_index = len(self.coords)
+            self.coords.append(point)
+            a, b, c = t1
+            d, e, f = t2
+            T1 = (diagonal[0], common_edge[0], p_index)
+            T2 = (common_edge[1], diagonal[0], p_index)
+            T3 = (common_edge[0], diagonal[1], p_index)
+            T4 = (diagonal[1], common_edge[1], p_index)
+            N1, N1_index, N2, N2_index, N3, N3_index, N4, N4_index = self.get_neighbours_of_edge(common_edge, t1, t2)
+        
+            self.triangles.pop(t1)
+            self.circles.pop(t1)
+            self.triangles.pop(t2)
+            self.circles.pop(t2)
+
+            self.triangles[T1] = [T3, T2, N1]
+            self.circles[T1] = self.circumcenter(T1)
+            if N1 != None and N1_index != -1:
+                self.triangles[N1][N1_index] = T1
+
+            self.triangles[T2] = [T1, T4, N2]
+            if N2 != None and N2_index != -1:
+                self.triangles[N2][N2_index] = T2
+            self.circles[T2] = self.circumcenter(T2)
+
+            self.triangles[T3] = [T2, T1, N3]
+            self.circles[T3] = self.circumcenter(T3)
+            if N3 != None and N3_index != -1:
+                self.triangles[N3][N3_index] = T3
+
+            self.triangles[T4] = [T2, T1, N3]
+            self.circles[T4] = self.circumcenter(T4)
+            if N4 != None and N4_index != -1:
+                self.triangles[N4][N4_index] = T4
+            return T1, T2, T3, T4
+        else:
+            assert(diagonal[0] in t1)
+            assert((common_edge[0] in t1) and (common_edge[1] in t1))
+            assert(self.on_triangle_edge_test(point, t1) == common_edge)
+            p_index = len(self.coords)
+            self.coords.append(point)
+            a, b, c = t1
+            T1 = (diagonal[0], common_edge[0], p_index)
+            T2 = (common_edge[1], diagonal[0], p_index)
+            N1, N1_index, N2, N2_index, N3, N3_index, N4, N4_index = self.get_neighbours_of_edge(common_edge, t1, None)
+            self.triangles.pop(t1)
+            self.circles.pop(t1)
+
+            self.triangles[T1] = [None, T2, N1]
+            self.circles[T1] = self.circumcenter(T1)
+            if N1 != None and N1_index != -1:
+                self.triangles[N1][N1_index] = T1
+
+            self.triangles[T2] = [T1, None, N2]
+            if N2 != None and N2_index != -1:
+                self.triangles[N2][N2_index] = T2
+            self.circles[T2] = self.circumcenter(T2)
+            return T1, T2, None, None
+
+
+    def legalize_edge(self, edge, tri_indices):
         """
-        triangle1 = [pr, pi, pl]
-        triangle2 = [pr, pl, pj]
-        triangle3 = [pr, pj, pk]
-        triangle4 = [pr, pk, pi]
-        # Replace the original triangle with the new triangles in T
-        for triangle in T:
-            if pi in triangle and pj in triangle and pk in triangle:
-                T.remove(triangle) #T.remove([pi, pj, pk])
-        for triangle in T:
-            if pi in triangle and pj in triangle and pl in triangle:
-                T.remove(triangle) #T.remove([pi, pj, pl])
-        T.append(triangle1)
-        T.append(triangle2)
-        T.append(triangle3)
-        T.append(triangle4)
-        return T
+        Legalizes an edge in the Delaunay triangulation recursively
         """
-        assert((common_edge[0] in t1) and (common_edge[1] in t1) and(common_edge[0] in t2) and(common_edge[1] in t2))
-        assert(self.on_triangle_edge_test(point, t1) == common_edge)
-        assert(self.on_triangle_edge_test(point, t2) == common_edge)
-        return [None, None, None, None]
+        assert((edge[0] in tri_indices) and (edge[1] in tri_indices))
+        (vert_opposing_edge, vert_opppsing_edge_for_adj), (pos_vert_opposing_edge, pos_vert_opposing_edge_for_adj), adj_tri_indices = self.get_neighbour_from_edge(edge, tri_indices)
+        if adj_tri_indices != None:
+            illegal_flag = self.circumcircle_test(tri_indices, self.coords[vert_opppsing_edge_for_adj])
+            if illegal_flag:
+                self.flip_edge(edge, (vert_opposing_edge, vert_opppsing_edge_for_adj), tri_indices, adj_tri_indices)
+                self.legalize_edge((edge[0], vert_opppsing_edge_for_adj), adj_tri_indices)
+                self.legalize_edge((vert_opppsing_edge_for_adj, edge[1]), adj_tri_indices)
+        return 
 
 
     def add_point(self, point):
         """
         Adds the point to the triangulation, and legalizes the edges
         """
-        """ 
-        pr = P[r]
-        pi, pj, pk = find_triangle_containing_point(pr, T)
-        if is_on_edge(pr, (pi, pj)) or is_on_edge(pr, (pk, pj)) or is_on_edge(pr, (pi, pk)):
-            pl = find_third_vertex(pr, pi, pj, T)
-            T = split_triangles_with_edge(pr, pi, pj, pk, pl, T)
-            T = LEGALIZEEDGE(pr, (pi, pl), T)
-            T = LEGALIZEEDGE(pr, (pl, pj), T)
-            T = LEGALIZEEDGE(pr, (pj, pk), T)
-            T = LEGALIZEEDGE(pr, (pk, pi), T)
+        tri = self.point_location(point)
+        # if this assert hits, it means that super triangle was not large enough
+        assert (tri != None) 
+        (a, b, c) = tri
+        nullable_edge = self.on_triangle_edge_test(point, tri)
+        on_edge = (nullable_edge != None)
+        if on_edge:
+            for (e1, e2) in [(a, b), (a, c), (b, c)]:
+                if nullable_edge == (e1, e2) or nullable_edge == (e2, e1):
+                    (vert_opposing_edge, vert_opposing_edge_for_adj), (pos_vert_opposing_edge, pos_vert_opposing_edge_for_adj), adj_tri_indices = self.get_neighbour_from_edge(nullable_edge, tri)
+                    diag = (vert_opposing_edge, vert_opposing_edge_for_adj)
+                    T1, T2, T3, T4 = self.register_point_and_split_triangles_into_four_from_edge(nullable_edge, diag, tri, adj_tri_indices, point)
+                    self.legalize_edge((diag[0], nullable_edge[0]), T1)
+                    self.legalize_edge((diag[0], nullable_edge[1]), T2)
+                    if T3 != None:
+                        self.legalize_edge((diag[1], nullable_edge[0]), T3)
+                    if T4 != None:
+                        self.legalize_edge((diag[1], nullable_edge[1]), T4)
         else:
-            T = split_triangle(pr, pi, pj, pk, T)
-            T = LEGALIZEEDGE(pr, (pi, pj), T)
-            T = LEGALIZEEDGE(pr, (pj, pk), T)
-            T = LEGALIZEEDGE(pr, (pk, pi), T)
-        """
+            T1, T2, T3 = self.register_point_and_split_triangle_into_three(tri, point)
+            self.legalize_edge((a, b), T1)
+            self.legalize_edge((a, c), T2)
+            self.legalize_edge((b, c), T3)
         return
 
 

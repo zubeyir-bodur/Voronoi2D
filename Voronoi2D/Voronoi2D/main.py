@@ -33,14 +33,13 @@ points = []
 incremental_dt = Voronoi2DIncremental(center, 50 * radius)
 
 
-def get_random_point():
-    global center
+def get_random_point(center_):
     random_numbers_btw_zero_and_two_pi = np.random.random(size=1)*2*math.pi
     random_numbers_btw_zero_and_radius_min_spacing = np.random.random(size=1)
     theta__ = clamp(random_numbers_btw_zero_and_two_pi[0], 0, 2*math.pi)
     radius__ = clamp(math.sqrt(random_numbers_btw_zero_and_radius_min_spacing[0])*(radius - spacing), 0, radius - spacing)
-    x_coord = radius__*math.cos(theta__) + center[0]
-    y_coord = radius__*math.sin(theta__) + center[1]    
+    x_coord = radius__*math.cos(theta__) + center_[0]
+    y_coord = radius__*math.sin(theta__) + center_[1]    
     return np.array([x_coord, y_coord])
 
 
@@ -48,15 +47,9 @@ def generate_random_points(numPoints):
     global center
     center = ((SCREEN_HEIGHT + 250) / 2, SCREEN_HEIGHT / 2)
     global points
-    random_numbers_btw_zero_and_two_pi = np.random.random(numPoints)*2*math.pi
-    random_numbers_btw_zero_and_radius_min_spacing = np.random.random(size=numPoints)
     points.clear()
     for i in range(numPoints):
-        theta__ = clamp(random_numbers_btw_zero_and_two_pi[i], 0, 2*math.pi)
-        radius__ = clamp(math.sqrt(random_numbers_btw_zero_and_radius_min_spacing[i])*(radius - spacing), 0, radius - spacing)
-        x_coord = radius__*math.cos(theta__) + center[0]
-        y_coord = radius__*math.sin(theta__) + center[1]
-        points.append(np.array([x_coord, y_coord]))
+        points.append(get_random_point(center))
     center = np.mean(points, axis=0)
 
 
