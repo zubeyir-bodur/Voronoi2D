@@ -25,6 +25,28 @@ class Voronoi2DIncremental:
         for t in self.triangles:
             self.circles[t] = self.circumcenter(t)
 
+    def reset(self, center, radius):
+        center = np.asarray(center)
+        # Corners for super-triangles
+        self.coords = [center + radius * np.array((-1, -1)),
+                       center + radius * np.array((+1, -1)),
+                       center + radius * np.array((+1, +1)),
+                       center + radius * np.array((-1, +1))]
+        del self.triangles
+        del self.circles
+        self.triangles = {}
+        self.circles = {}
+
+        # The super triangles
+        T1 = (0, 1, 3)
+        T2 = (2, 3, 1)
+        self.triangles[T1] = [T2, None, None]
+        self.triangles[T2] = [T1, None, None]
+
+        # Compute circumcircles
+        for t in self.triangles:
+            self.circles[t] = self.circumcenter(t)
+
     def circumcenter(self, tri):
         pts = np.asarray([self.coords[v] for v in tri])
         pts2 = np.dot(pts, pts.T)

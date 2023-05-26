@@ -30,9 +30,23 @@ NOP_RECT = pygame.Rect(1150, 310, 140, 30)
 radius = SCREEN_HEIGHT / 2
 center = ((SCREEN_HEIGHT + 250) / 2, SCREEN_HEIGHT / 2)
 points = []
+incremental_dt = Voronoi2DIncremental(center, 50 * radius)
+
+
+def get_random_point():
+    global center
+    random_numbers_btw_zero_and_two_pi = np.random.random(size=1)*2*math.pi
+    random_numbers_btw_zero_and_radius_min_spacing = np.random.random(size=1)
+    theta__ = clamp(random_numbers_btw_zero_and_two_pi[0], 0, 2*math.pi)
+    radius__ = clamp(math.sqrt(random_numbers_btw_zero_and_radius_min_spacing[0])*(radius - spacing), 0, radius - spacing)
+    x_coord = radius__*math.cos(theta__) + center[0]
+    y_coord = radius__*math.sin(theta__) + center[1]    
+    return np.array([x_coord, y_coord])
+
 
 def generate_random_points(numPoints):
     global center
+    center = ((SCREEN_HEIGHT + 250) / 2, SCREEN_HEIGHT / 2)
     global points
     random_numbers_btw_zero_and_two_pi = np.random.random(numPoints)*2*math.pi
     random_numbers_btw_zero_and_radius_min_spacing = np.random.random(size=numPoints)
@@ -43,6 +57,31 @@ def generate_random_points(numPoints):
         x_coord = radius__*math.cos(theta__) + center[0]
         y_coord = radius__*math.sin(theta__) + center[1]
         points.append(np.array([x_coord, y_coord]))
+    center = np.mean(points, axis=0)
+
+
+def step_randomized_incremental(surface):
+    global center
+    global radius
+    p = get_random_point()
+    points.append(p)
+    clock_start = time.time()
+    incremental_dt.addPoint(p)
+    #incremental_dt.reset(center, radius * 50)
+    #for point_ in points:
+    #    incremental_dt.addPoint(point_)
+    voronoi_edges, voronoi_vertices = incremental_dt.generateVoronoi()
+    clock_end = time.time()
+    for t in incremental_dt.exportTriangles()[0]:
+        pygame.draw.polygon(surface=surface, color=(181, 230, 29), points=[points[t[0]], points[t[1]], points[t[2]]], width=1)
+    for v_e in voronoi_edges:
+        pygame.draw.line(surface=surface, color="#CC00FF", start_pos=v_e[0], end_pos=v_e[1], width=2)    
+    for v_v in voronoi_vertices:
+        pygame.draw.circle(surface, "#CCCC11", v_v, 1)
+    for p in points:
+        pygame.draw.circle(surface, "#FF0000", p, 2)
+    if TESTING:
+        print("The insertion of %dth point took %f ms: " % (len(points), (clock_end - clock_start)*1000.0))
 
 
 def generate_randomized_incremental(surface, numSeeds):
@@ -50,12 +89,13 @@ def generate_randomized_incremental(surface, numSeeds):
     global radius
     generate_random_points(numSeeds)
     clock_start = time.time()
-    dt = Voronoi2DIncremental(center, 50 * radius)
+    center = np.mean(points)
+    incremental_dt.reset(center, radius * 50)
     for p in points:
-        dt.addPoint(p)
-    voronoi_edges, voronoi_vertices = dt.generateVoronoi()
+        incremental_dt.addPoint(p)
+    voronoi_edges, voronoi_vertices = incremental_dt.generateVoronoi()
     clock_end = time.time()
-    for t in dt.exportTriangles()[0]:
+    for t in incremental_dt.exportTriangles()[0]:
         pygame.draw.polygon(surface=surface, color=(181, 230, 29), points=[points[t[0]], points[t[1]], points[t[2]]], width=1)
     for v_e in voronoi_edges:
         pygame.draw.line(surface=surface, color="#CC00FF", start_pos=v_e[0], end_pos=v_e[1], width=2)    
@@ -70,28 +110,53 @@ def generate_randomized_incremental(surface, numSeeds):
 def generate_fortunes(surface, numSeeds):
     global center
     global radius
+    incremental_dt.reset(center, radius * 50)
     generate_random_points(numSeeds)
     clock_start = time.time()
     # TODO Fortune's Algorithm impl.
     clock_end = time.time()
+    for p in points:
+        pygame.draw.circle(surface, "#FF0000", p, 2)
     if TESTING:
         print("The Voronoi diagram with %d points took %f ms: " % (numSeeds, (clock_end - clock_start)*1000.0))
+
+
+def step_flipping(surface):
+    global center
+    global radius
+    incremental_dt.reset(center, radius * 50)
+    p = get_random_point()
+    points.append(p)
+    clock_start = time.time()
+    # TODO Fortune's Algorithm impl.
+    clock_end = time.time()
+    for p in points:
+        pygame.draw.circle(surface, "#FF0000", p, 2)
+
 
 def generate_flipping(surface, numSeeds):
     global center
     global radius
+    incremental_dt.reset(center, radius * 50)
     generate_random_points(numSeeds)
     clock_start = time.time()
     # TODO Flipping alg. impl.
     clock_end = time.time()
+    for p in points:
+        pygame.draw.circle(surface, "#FF0000", p, 2)
     if TESTING:
         print("The Voronoi diagram with %d points took %f ms: " % (numSeeds, (clock_end - clock_start)*1000.0))
 
 
 def clear(surface):
+    no_of_points = ""
     surface.fill((76, 98, 122))
     global points
+    global center
+    center = ((SCREEN_HEIGHT + 250) / 2, SCREEN_HEIGHT / 2)
+    del points
     points = []
+    incremental_dt.reset(center, radius * 50)
 
 
 def event_loop(current_menu):
@@ -132,14 +197,17 @@ def event_loop(current_menu):
 
         GENERATE = Button(image=None, pos=(1150, 370), text_input="Generate",
                       font=get_font(25), base_color="Black", hovering_color="Yellow")
-        CLEAR = Button(image=None, pos=(1148, 420), text_input="Clear All",
+        STEP = Button(image=None, pos=(1155, 420), text_input="Next Step",
+                      font=get_font(25), base_color="Black", hovering_color="Yellow")
+        CLEAR = Button(image=None, pos=(1148, 470), text_input="Clear All",
                       font=get_font(25), base_color="Black", hovering_color="Yellow")
         BACK = Button(image=None, pos=(1150, 725), text_input="Back to Main Menu",
                       font=get_font(25), base_color="Black", hovering_color="Yellow")
 
-        for button in [GENERATE, CLEAR, BACK]:
-            button.changeColor(mouse)
-            button.update(screen)
+        for button in [GENERATE, STEP, CLEAR, BACK]:
+            if not(current_menu == 1 and button == STEP):
+                button.changeColor(mouse)
+                button.update(screen)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -161,7 +229,23 @@ def event_loop(current_menu):
                         generate_fortunes(pic, no)
                     elif current_menu == 2:
                         generate_flipping(pic, no)
+                elif STEP.checkForInput(mouse):
+                    if consecutive_nexts == 0:
+                        clear(pic)
+                        no_of_points = ""
+                    else:
+                        pic.fill((76, 98, 122))
+                    consecutive_nexts += 1
+                    if no_of_points == "":
+                        no_of_points = "1"
+                    else:
+                        no_of_points = str(int(no_of_points) +1)
+                    if current_menu == 0:
+                        step_randomized_incremental(pic)
+                    elif current_menu == 2:
+                        step_flipping(pic)
                 elif CLEAR.checkForInput(mouse):
+                    no_of_points = ""
                     consecutive_nexts = 0
                     clear(pic)
                 if NOP_RECT.collidepoint(event.pos):
@@ -179,6 +263,7 @@ def event_loop(current_menu):
 
         pygame.display.flip()
         clock.tick()
+
 
 def main_menu():
     pygame.display.set_caption("CS 478 Project - Implementing Three Voronoi Diagram Computation Algorithms " 
