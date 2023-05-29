@@ -3,6 +3,8 @@ import numpy as np
 import math
 from math import acos, sqrt
 
+bigM = 1.0e+5
+
 def left_test(p0, p1, p2):
         return (p0[0] - p2[0]) * (p1[1] - p2[1]) - (p0[1] - p2[1]) * (p1[0] - p2[0]) > 0
 
@@ -549,16 +551,16 @@ class Voronoi2DFlipping:
                     len_vec = math.sqrt(vec[0]**2 + vec[1]**2)
                     if self.in_triangle_test(circumcenter_a[0], circumcenter_a[1], (a, b, c)):
                         unit_vec = tuple([vec[0] / len_vec, vec[1] / len_vec])
-                        target_p_at_inf = tuple([circumcenter_a[0] + 2000*unit_vec[0], circumcenter_a[1] + 2000*unit_vec[1]])
+                        target_p_at_inf = tuple([circumcenter_a[0] + bigM*unit_vec[0], circumcenter_a[1] + bigM*unit_vec[1]])
                         voronoi_edges[(tuple(circumcenter_a), target_p_at_inf)] = 0
                     else:
                         if self.angle_of_vertex((a, b, c), outer_vertices[i]) > math.pi/2.0:
                             opposite_unit_vec = tuple([(opposite_vec[0]) / len_vec, (opposite_vec[1]) / len_vec])
-                            target_p_at_inf = tuple([circumcenter_a[0] + 2000*opposite_unit_vec[0], circumcenter_a[1] + 2000*opposite_unit_vec[1]])
+                            target_p_at_inf = tuple([circumcenter_a[0] + bigM*opposite_unit_vec[0], circumcenter_a[1] + bigM*opposite_unit_vec[1]])
                             voronoi_edges[(tuple(circumcenter_a), target_p_at_inf)] = 0
                         else:
                             unit_vec = tuple([(vec[0]) / len_vec, (vec[1]) / len_vec])
-                            target_p_at_inf = tuple([circumcenter_a[0] + 2000*unit_vec[0], circumcenter_a[1] + 2000*unit_vec[1]])
+                            target_p_at_inf = tuple([circumcenter_a[0] + bigM*unit_vec[0], circumcenter_a[1] + bigM*unit_vec[1]])
                             voronoi_edges[(tuple(circumcenter_a), target_p_at_inf)] = 0
                 for (a_n, b_n, c_n) in neighbors:
                     if a_n > 3 and b_n > 3 and c_n > 3:

@@ -1,7 +1,7 @@
 import numpy as np
 import math
 
-bigM = 1.0e+4
+bigM = 1.0e+5
 
 class Voronoi2DIncremental:
     def __init__(self, center=(0, 0), radius=36500):
