@@ -9,6 +9,24 @@ from Button import Button
 from incremental.voronooi2Dincremental import Voronoi2DIncremental
 from flipping.voronooi2Dflip import Voronoi2DFlipping
 
+class NextStepFSM:
+    def __init__(self):
+        self.states = {0 : "DT",
+                       1 : "VD"}
+        self.reset()
+
+    def reset(self):
+        self.current_state = -1
+        self.consecutive_nexts = 0
+
+    def next_state(self):
+        if self.current_state == 0:
+            self.consecutive_nexts += 1
+        self.current_state += 1
+        self.current_state %= 2
+        return self.states[self.current_state]
+
+
 
 def clamp(num, min_value, max_value):
    return max(min(num, max_value), min_value)
@@ -81,27 +99,29 @@ def generate_random_points(numPoints):
     center = np.mean(points, axis=0)
 
 
-def step_randomized_incremental(surface):
+def step_randomized_incremental(surface, state):
     global center
     global radius
     global points
-    p = get_random_point(center)[0]
-    points.append(p)
-    center = np.mean(points, axis=0)
     clock_start = time.time()
-    incremental_dt.add_point(p)
-    voronoi_edges, voronoi_vertices = incremental_dt.generate_voronoi()
+    if state == "DT":
+        center = ((SCREEN_HEIGHT + 250) / 2, SCREEN_HEIGHT / 2)
+        p = get_random_point(center)[0]
+        points.append(p)
+        center = np.mean(points, axis=0)
+        incremental_dt.add_point(p)
+    if state == "VD":
+        voronoi_edges, voronoi_vertices = incremental_dt.generate_voronoi()
     clock_end = time.time()
     for t in incremental_dt.export_triangles()[0]:
         pygame.draw.polygon(surface=surface, color=(181, 230, 29), points=[points[t[0]], points[t[1]], points[t[2]]], width=1)
-    for v_e in voronoi_edges:
-        pygame.draw.line(surface=surface, color="#CC00FF", start_pos=v_e[0], end_pos=v_e[1], width=2)    
-    for v_v in voronoi_vertices:
-        pygame.draw.circle(surface, "#CCCC11", v_v, 1)
+    if state == "VD":
+        for v_e in voronoi_edges:
+            pygame.draw.line(surface=surface, color="#CC00FF", start_pos=v_e[0], end_pos=v_e[1], width=2)    
+        for v_v in voronoi_vertices:
+            pygame.draw.circle(surface, "#CCCC11", v_v, 1)
     for p in points:
         pygame.draw.circle(surface, "#FF0000", p, 2)
-    if TESTING:
-        print("The insertion of %dth point took %f ms: " % (len(points), (clock_end - clock_start)*1000.0))
 
 
 def generate_randomized_incremental(surface, numSeeds):
@@ -140,27 +160,28 @@ def generate_fortunes(surface, numSeeds):
         print("The Voronoi diagram with %d points took %f ms: " % (numSeeds, (clock_end - clock_start)*1000.0))
 
 
-def step_flipping(surface):
+def step_flipping(surface, state):
     global center
     global radius
-    p = get_random_point(center)[0]
-    points.append(p)
-    center = np.mean(points, axis=0)
     clock_start = time.time()
-    # TODO Flipping Algorithm impl.
-    flipping_dt.add_point(p)
-    voronoi_edges, voronoi_vertices = flipping_dt.generate_voronoi()
+    if state == "DT":
+        center = ((SCREEN_HEIGHT + 250) / 2, SCREEN_HEIGHT / 2)
+        p = get_random_point(center)[0]
+        points.append(p)
+        center = np.mean(points, axis=0)
+        flipping_dt.add_point(p)
+    if state == "VD":
+        voronoi_edges, voronoi_vertices = flipping_dt.generate_voronoi()
     clock_end = time.time()
     for t in flipping_dt.export_triangles()[0]:
         pygame.draw.polygon(surface=surface, color=(181, 230, 29), points=[points[t[0]], points[t[1]], points[t[2]]], width=1)
-    for v_e in voronoi_edges:
-        pygame.draw.line(surface=surface, color="#CC00FF", start_pos=v_e[0], end_pos=v_e[1], width=2)    
-    for v_v in voronoi_vertices:
-        pygame.draw.circle(surface, "#CCCC11", v_v, 1)
+    if state == "VD":
+        for v_e in voronoi_edges:
+            pygame.draw.line(surface=surface, color="#CC00FF", start_pos=v_e[0], end_pos=v_e[1], width=2)    
+        for v_v in voronoi_vertices:
+            pygame.draw.circle(surface, "#CCCC11", v_v, 1)
     for p in points:
         pygame.draw.circle(surface, "#FF0000", p, 2)    
-    if TESTING:
-        print("The insertion of %dth point took %f ms: " % (len(points), (clock_end - clock_start)*1000.0))
 
 
 def generate_flipping(surface, numSeeds):
@@ -168,7 +189,6 @@ def generate_flipping(surface, numSeeds):
     global radius
     generate_random_points(numSeeds)
     clock_start = time.time()
-    # TODO Flipping alg. impl.
     center = np.mean(points)
     flipping_dt.reset(center, radius * 50)
     for p in points:
@@ -216,7 +236,7 @@ def event_loop(current_menu):
     no_of_points = ""
     active = False
     zoomActive = False
-    consecutive_nexts = 0
+    next_step_fsm = NextStepFSM()
     while True:
         mouse = pygame.mouse.get_pos()
         fake_screen.fill((161, 200, 207))
@@ -260,7 +280,7 @@ def event_loop(current_menu):
                 sys.exit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if BACK.mousePressEvent(mouse):
-                    consecutive_nexts = 0
+                    next_step_fsm.reset()
                     main_menu()
                 elif DISTRIBUTION.mousePressEvent(mouse):
                     current_distribution += 1
@@ -271,7 +291,7 @@ def event_loop(current_menu):
                     if no_of_points == "":
                         no_of_points = "10"
                     no = int(no_of_points)
-                    consecutive_nexts = 0
+                    next_step_fsm.reset()
                     clear(pic)
                     if current_menu == 0:
                         generate_randomized_incremental(pic, no)
@@ -280,23 +300,33 @@ def event_loop(current_menu):
                     elif current_menu == 2:
                         generate_flipping(pic, no)
                 elif STEP.mousePressEvent(mouse):
-                    if consecutive_nexts == 0:
+                    
+                    if next_step_fsm.current_state == -1:
                         clear(pic)
                         no_of_points = ""
                     else:
                         pic.fill((76, 98, 122))
-                    consecutive_nexts += 1
-                    if no_of_points == "":
-                        no_of_points = "1"
+                    out = next_step_fsm.next_state()
+
+                    if out == "DT":
+                        if no_of_points == "":
+                            no_of_points = "1"
+                        else:
+                            no_of_points = str(int(no_of_points) +1)
+
+
+                        if current_menu == 0:
+                            step_randomized_incremental(pic, "DT")
+                        elif current_menu == 2:
+                            step_flipping(pic, "DT")
                     else:
-                        no_of_points = str(int(no_of_points) +1)
-                    if current_menu == 0:
-                        step_randomized_incremental(pic)
-                    elif current_menu == 2:
-                        step_flipping(pic)
+                        if current_menu == 0:
+                            step_randomized_incremental(pic, "VD")
+                        elif current_menu == 2:
+                            step_flipping(pic, "VD")
                 elif CLEAR.mousePressEvent(mouse):
                     no_of_points = ""
-                    consecutive_nexts = 0
+                    next_step_fsm.reset()
                     clear(pic)
                 if NOP_RECT.collidepoint(event.pos):
                     active = True
