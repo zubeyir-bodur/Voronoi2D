@@ -108,7 +108,8 @@ class Voronoi2DFlipping:
         A1 = self.area(x, y, self.coords[tri_indices[1]][0], self.coords[tri_indices[1]][1], self.coords[tri_indices[2]][0], self.coords[tri_indices[2]][1])
         A2 = self.area(self.coords[tri_indices[0]][0], self.coords[tri_indices[0]][1], x, y, self.coords[tri_indices[2]][0], self.coords[tri_indices[2]][1])
         A3 = self.area(self.coords[tri_indices[0]][0], self.coords[tri_indices[0]][1], self.coords[tri_indices[1]][0], self.coords[tri_indices[1]][1], x, y)
-        return (A == A1 + A2 + A3)
+        diff = abs(A - (A1 + A2 + A3))
+        return diff < 1e-6
 
 
     def point_location(self, point):
@@ -116,7 +117,7 @@ class Voronoi2DFlipping:
         Iterative point location for the triangulation
         """
         for (a, b, c) in self.triangles:
-            if self.in_triangle_test(point, (a, b, c)):
+            if self.in_triangle_test(point[0], point[1], (a, b, c)):
                 return (a, b, c)
         return None
 
@@ -130,7 +131,7 @@ class Voronoi2DFlipping:
             line_segment_length = np.sum(np.square(self.coords[e1] - self.coords[e2]))
             dist_e1_p = np.sum(np.square(self.coords[e1] - point))
             dist_e2_p = np.sum(np.square(self.coords[e2] - point))
-            if line_segment_length == dist_e1_p + dist_e2_p:
+            if abs(line_segment_length - (dist_e1_p + dist_e2_p)) < 1e-6:
                 return (e1, e2)
         return None
 
@@ -226,26 +227,45 @@ class Voronoi2DFlipping:
             for i, x in enumerate(t1):
                 if x == common_edge[1]:
                     N1 = self.triangles[t1][i] # tri in front of common_edge_1 for t1
-                    for j, (ja, jb, jc) in enumerate(self.triangles[N1]):
-                        if (ja, jb, jc) == t1:
-                            N1_index = j
+                    if N1 != None:
+                        #for j, (ja, jb, jc) in enumerate(self.triangles[N1]):
+                        for j in range(3):
+                            three_tuple = self.triangles[N1][j]
+                            if three_tuple != None:
+                                (ja, jb, jc) = three_tuple
+                                if (ja, jb, jc) == t1:
+                                    N1_index = j
                 elif x == common_edge[0]:
                     N2 = self.triangles[t1][i] # tri in front of common_edge_0 for t1
-                    for j, (ja, jb, jc) in enumerate(self.triangles[N2]):
-                        if (ja, jb, jc) == t1:
-                            N2_index = j
+                    if N2 != None:
+                        for j in range(3):
+                            three_tuple = self.triangles[N2][j]
+                            if three_tuple != None:
+                                (ja, jb, jc) = three_tuple
+                                if (ja, jb, jc) == t1:
+                                    N2_index = j
         if t2 != None:
             for i, x in enumerate(t2):
                 if x == common_edge[1]:
                     N3 = self.triangles[t2][i] # tri in front of common_edge_1 for t2
-                    for j, (ja, jb, jc) in enumerate(self.triangles[N3]):
-                        if (ja, jb, jc) == t2:
-                            N3_index = j
+                    if N3 != None:
+                        #for j, (ja, jb, jc) in enumerate(self.triangles[N3]):
+                        for j in range(3):
+                            three_tuple = self.triangles[N3][j]
+                            if three_tuple != None:
+                                (ja, jb, jc) = three_tuple
+                                if (ja, jb, jc) == t2:
+                                    N3_index = j
                 elif x == common_edge[0]:
-                    N4 = self.triangles[t1][i] # tri in front of common_edge_0 for t2
-                    for j, (ja, jb, jc) in enumerate(self.triangles[N4]):
-                        if (ja, jb, jc) == t2:
-                            N4_index = j
+                    N4 = self.triangles[t2][i] # tri in front of common_edge_0 for t2
+                    if N4 != None:
+                        #for j, (ja, jb, jc) in enumerate(self.triangles[N4]):
+                        for j in range(3):
+                            three_tuple = self.triangles[N4][j]
+                            if three_tuple != None:
+                                (ja, jb, jc) = three_tuple
+                                if (ja, jb, jc) == t2:
+                                    N4_index = j
         return N1, N1_index, N2, N2_index, N3, N3_index, N4, N4_index
 
 
@@ -262,8 +282,8 @@ class Voronoi2DFlipping:
         self.circles.pop(t2)
         t1_new = (common_edge[0], diagonal[0], diagonal[1])
         t2_new = (common_edge[1], diagonal[1], diagonal[0])
-        self.triangles[t1_new] = [t2, N3, N1]
-        self.triangles[t2_new] = [t1, N2, N4]
+        self.triangles[t1_new] = [t2_new, N3, N1]
+        self.triangles[t2_new] = [t1_new, N2, N4]
         self.circles[t1_new] = self.circumcenter(t1_new)
         self.circles[t2_new] = self.circumcenter(t2_new)
         if N1 != None and N1_index != -1:
@@ -274,7 +294,7 @@ class Voronoi2DFlipping:
             self.triangles[N3][N3_index] = t1_new
         if N4 != None and N4_index != -1:
             self.triangles[N4][N4_index] = t2_new
-        return
+        return t1_new, t2_new
 
 
     def register_point_and_split_triangle_into_three(self, tri_indices, point):
@@ -306,17 +326,29 @@ class Voronoi2DFlipping:
         N3 = self.triangles[(a, b, c)][0] # adjacent to T3
         N3_index = -1
         if N1 != None:
-            for j, (ja, jb, jc) in enumerate(self.triangles[N1]):
-                if (ja, jb, jc) == tri_indices:
-                    N1_index = j
+            #for j, (ja, jb, jc) in enumerate(self.triangles[N1]):
+            for j in range(3):
+                three_tuple = self.triangles[N1][j]
+                if three_tuple != None:
+                    (ja, jb, jc) = three_tuple
+                    if (ja, jb, jc) == tri_indices:
+                        N1_index = j
         if N2 != None:
-            for j, (ja, jb, jc) in enumerate(self.triangles[N2]):
-                if (ja, jb, jc) == tri_indices:
-                    N2_index = j
+            #for j, (ja, jb, jc) in enumerate(self.triangles[N2]):
+            for j in range(3):
+                three_tuple = self.triangles[N2][j]
+                if three_tuple != None:
+                    (ja, jb, jc) = three_tuple
+                    if (ja, jb, jc) == tri_indices:
+                        N2_index = j
         if N3 != None:
-            for j, (ja, jb, jc) in enumerate(self.triangles[N3]):
-                if (ja, jb, jc) == tri_indices:
-                    N3_index = j
+            #for j, (ja, jb, jc) in enumerate(self.triangles[N3]):
+            for j in range(3):
+                three_tuple = self.triangles[N3][j]
+                if three_tuple != None:
+                    (ja, jb, jc) = three_tuple
+                    if (ja, jb, jc) == tri_indices:
+                        N3_index = j
         self.triangles.pop(tri_indices)
         self.circles.pop(tri_indices)
         self.triangles[T1] = [T3, T2, N1]
@@ -435,9 +467,9 @@ class Voronoi2DFlipping:
         if adj_tri_indices != None:
             illegal_flag = self.circumcircle_test(tri_indices, self.coords[vert_opppsing_edge_for_adj])
             if illegal_flag:
-                self.flip_edge(edge, (vert_opposing_edge, vert_opppsing_edge_for_adj), tri_indices, adj_tri_indices)
-                self.legalize_edge((edge[0], vert_opppsing_edge_for_adj), adj_tri_indices)
-                self.legalize_edge((vert_opppsing_edge_for_adj, edge[1]), adj_tri_indices)
+                new_tri_indices, new_adj_tri_indices = self.flip_edge(edge, (vert_opposing_edge, vert_opppsing_edge_for_adj), tri_indices, adj_tri_indices)
+                self.legalize_edge((edge[0], vert_opppsing_edge_for_adj), new_tri_indices)
+                self.legalize_edge((vert_opppsing_edge_for_adj, edge[1]), new_adj_tri_indices)
         return 
 
 
