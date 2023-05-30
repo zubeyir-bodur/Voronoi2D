@@ -1,4 +1,3 @@
-from multiprocessing.dummy import current_process
 import sys
 import pygame
 import numpy as np
