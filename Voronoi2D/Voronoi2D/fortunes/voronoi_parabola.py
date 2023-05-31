@@ -2,24 +2,14 @@ class VoronoiParabola:
     """
     Binary Tree that holds the parabolas, also itself is a parabola
     """
-    def __init__(self):
-        self.site = None            # Site vector, 2-tuple
-        self.leftParabola = None    # Left Child
-        self.rightParabola = None   # Right Child
-        self.parent = None          # Parent parabola
-        self.edge = None            
-        self.circleEvent = None
-        self.isLeaf = True         # True if there is no left or right child
-    
-
-    def __init__(self, site_vector):
-        self.site = site_vector
-        self.leftParabola = None
-        self.rightParabola = None
-        self.parent = None
+    def __init__(self, site_vector=None):
+        self.site = site_vector      # Site vector, 2-tuple
+        self.leftParabola = None     # Left Child
+        self.rightParabola = None    # Right Child
+        self.parent = None           # Parent parabola
         self.edge = None
         self.circleEvent = None
-        self.isLeaf = True
+        self.isLeaf = True           # True if there is no left or right child
 
 
     def left_child(self):
@@ -53,7 +43,7 @@ class VoronoiParabola:
     def left_parabola_on_upper_level(self):
         current_parent = self.parent
         previous_parent = self
-        while previous_parent.left_child() != current_parent:
+        while current_parent.left_child() == previous_parent:
             if current_parent.parent != None:
                 previous_parent = current_parent
                 current_parent = current_parent.parent
@@ -65,7 +55,7 @@ class VoronoiParabola:
     def right_parabola_on_upper_level(self):
         current_parent = self.parent
         previous_parent = self
-        while previous_parent.right_child() != current_parent:
+        while current_parent.right_child() == previous_parent:
             if current_parent.parent != None:
                 previous_parent = current_parent
                 current_parent = current_parent.parent

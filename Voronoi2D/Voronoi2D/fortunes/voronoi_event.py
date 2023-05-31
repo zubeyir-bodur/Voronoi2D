@@ -9,10 +9,16 @@ class VoronoiEvent:
         self.arch = None
 
     def __eq__(self, other):
-        return self.y == other.y
+        if other != None:
+            return self.y == other.y
+        else:
+            return False
         
     def __lt__(self, other):
-        return self.y < other.y
+        if other != None:
+            return self.y > other.y
+        else: 
+            return False
 
 
     #def compare_with_event(self, another_event):

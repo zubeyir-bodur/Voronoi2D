@@ -16,11 +16,11 @@ class Voronoi2DFortunes:
         self.sweep_line_pos = 0.0       # Beach line, which is horizontal
         self.places = voronoi_seeds     # an array of two tuples, representing voronoi seeds (or delaunay vertices)
         self.edges = []
-        self.deleted_events = {}
+        self.deleted_events = []
         self.points = []
         self.event_queue = PriorityQueue()
         for p in self.places:
-            self.event_queue.put(VoronoiEvent(p, True))
+            self.event_queue.put(VoronoiEvent((p[0], p[1]), True))
 
 
     def get_edges(self):
@@ -53,7 +53,7 @@ class Voronoi2DFortunes:
         while not self.event_queue.empty():
             event = self.event_queue.get()
             self.sweep_line_pos = event.point[1]
-            if event in self.deleted_event:
+            if event in self.deleted_events:
                 self.deleted_events.remove(event)
             elif event.place_event_flag:
                 self.insert_parabola(event.point)
@@ -99,7 +99,7 @@ class Voronoi2DFortunes:
             if not self.event_queue.empty():
                 event = self.event_queue.get()
                 self.sweep_line_pos = event.point[1]
-                if event in self.deleted_event:
+                if event in self.deleted_events:
                     self.deleted_events.remove(event)
                 elif event.place_event_flag:
                     self.insert_parabola(event.point)
@@ -143,7 +143,8 @@ class Voronoi2DFortunes:
             if edge.neighbour != None:
                 p0 = edge.neighbour.end
             # Draw line from p0 to p1
-            pygame.draw.line(surface=self.surface, color="#C8C8C8", start_pos=p0, end_pos=p1, width=2)
+            if p0 != (float('nan'), float('nan')) and p1 != (float('nan'), float('nan')) and p0 != None and p1 != None:
+                pygame.draw.line(surface=self.surface, color="#C8C8C8", start_pos=p0, end_pos=p1, width=2)
         # Draw sweep line
         pygame.draw.line(surface=self.surface, color="#C8FFC8", start_pos=(0, self.sweep_line_pos), end_pos=(self.width, self.sweep_line_pos), width=2)
         # Draw beach line
@@ -253,22 +254,22 @@ class Voronoi2DFortunes:
         """
         # Base case
         if self.root_parabola == None:
-            root = VoronoiParabola(parabola_vector)
+            self.root_parabola = VoronoiParabola(parabola_vector)
             return
 
         # Degenerate event - heights are the same
-        if root.isLeaf and (root.site[1] - parabola_vector[1]) < 1:
-            fp = root.site
-            root.isLeaf = False
-            root.set_left_child(VoronoiParabola(fp))
-            root.set_right_child(VoronoiParabola(parabola_vector))
+        if self.root_parabola.isLeaf and (self.root_parabola.site[1] - parabola_vector[1]) < 1:
+            fp = self.root_parabola.site
+            self.root_parabola.isLeaf = False
+            self.root_parabola.set_left_child(VoronoiParabola(fp))
+            self.root_parabola.set_right_child(VoronoiParabola(parabola_vector))
             s = ((parabola_vector[0] + fp[0])/2.0, self.height) # starting edge
             self.points.append(s)
             if parabola_vector[0] > fp[0]:
-                root.edge = VoronoiEdge(s, fp, parabola_vector)
+                self.root_parabola.edge = VoronoiEdge(s, fp, parabola_vector)
             else:
-                root.edge = VoronoiEdge(s, parabola_vector, fp)
-            self.edges.append(root.edge)
+                self.root_parabola.edge = VoronoiEdge(s, parabola_vector, fp)
+            self.edges.append(self.root_parabola.edge)
             return
 
         # General case
@@ -392,16 +393,17 @@ class Voronoi2DFortunes:
         self.edges.append(higher.edge)
 
         grand_parent = p1.parent.parent
-        if p1.parent.left_child() == p1:
-            if grand_parent.left_child() == p1.parent:
-                grand_parent.set_left_child(p1.parent.right_child())
-            if grand_parent.right_child() == p1.parent:
-                grand_parent.set_right_child(p1.parent.right_child())
-        else:
-            if grand_parent.left_child() == p1.parent:
-                grand_parent.set_left_child(p1.parent.left_child())
-            if grand_parent.right_child() == p1.parent:
-                grand_parent.set_right_child(p1.parent.left_child())
+        if grand_parent != None:
+            if p1.parent.left_child() == p1:
+                if grand_parent.left_child() == p1.parent:
+                    grand_parent.set_left_child(p1.parent.right_child())
+                if grand_parent.right_child() == p1.parent:
+                    grand_parent.set_right_child(p1.parent.right_child())
+            else:
+                if grand_parent.left_child() == p1.parent:
+                    grand_parent.set_left_child(p1.parent.left_child())
+                if grand_parent.right_child() == p1.parent:
+                    grand_parent.set_right_child(p1.parent.left_child())
         self.check_circle(p0)
         self.check_circle(p2)
         return
@@ -425,12 +427,12 @@ class Voronoi2DFortunes:
         if voronoi_parabola.isLeaf:
             return
         mx = -1.0
-        if n.edge.direction[0] > 0.0:
+        if voronoi_parabola.edge.direction[0] > 0.0:
             mx = max(self.width, voronoi_parabola.edge.start[0] + 10)
         else:
             mx = min(0.0, voronoi_parabola.edge.start[0] - 10)
 
-        end_vector = (max, mx*voronoi_parabola.edge.f + voronoi_parabola.edge.g)
+        end_vector = (mx, mx*voronoi_parabola.edge.f + voronoi_parabola.edge.g)
         voronoi_parabola.edge.end = end_vector
         self.points.append(end_vector)
         self.finish_edge(voronoi_parabola.left_child())
@@ -494,7 +496,7 @@ class Voronoi2DFortunes:
         x_2 = (-b - math.sqrt(discriminant)) / (2*a)
 
         return_y = -1.0
-        if p.y < r.y:
+        if p[1] < r[1]:
             return_y = max(x_1, x_2)
         else:
             return_y = min(x_1, x_2)
@@ -574,9 +576,12 @@ class Voronoi2DFortunes:
         """
         left_parent_parabola = voronoi_parabola.left_parabola_on_upper_level()
         right_parent_parabola = voronoi_parabola.right_parabola_on_upper_level()
-
-        parabola_a = left_parent_parabola.left_parabola_on_lower_level()
-        parabola_c = right_parent_parabola.right_parabola_on_lower_level()
+        parabola_a = None
+        parabola_c = None
+        if left_parent_parabola != None:
+            parabola_a = left_parent_parabola.left_parabola_on_lower_level()
+        if right_parent_parabola != None:
+            parabola_c = right_parent_parabola.right_parabola_on_lower_level()
 
         if parabola_a == None or parabola_c == None or parabola_a.site == parabola_c.site:
             return

@@ -5,6 +5,7 @@ import time
 import math
 
 from Button import Button
+from fortunes.voronooi2Dfortunes import Voronoi2DFortunes
 from incremental.voronooi2Dincremental import Voronoi2DIncremental
 from flipping.voronooi2Dflip import Voronoi2DFlipping
 
@@ -150,13 +151,22 @@ def generate_fortunes(surface, numSeeds):
     global center
     global radius
     generate_random_points(numSeeds)
-    clock_start = time.time()
-    # TODO Fortune's Algorithm impl.
-    clock_end = time.time()
-    for p in points:
-        pygame.draw.circle(surface, "#FF0000", p, 2)
+    time_passed_for_update = 0.0
+    fortunes_vd = Voronoi2DFortunes(surface, points, SCREEN_HEIGHT + 250, SCREEN_HEIGHT)
+    fake_screen = screen.copy()
+    while not fortunes_vd.done:
+        surface.fill((76, 98, 122))
+        clock_start = time.time()
+        fortunes_vd.update()
+        clock_end = time.time()
+        time_passed_for_update += (clock_end - clock_start)*1000.0
+        fortunes_vd.draw()
+        fake_screen.blit(surface, (0, 0))
+        screen.blit(pygame.transform.scale(fake_screen, screen.get_rect().size), (0, 0))
+        pygame.display.flip()
+        clock.tick()
     if TESTING:
-        print("The Voronoi diagram with %d points took %f ms: " % (numSeeds, (clock_end - clock_start)*1000.0))
+        print("The Voronoi diagram with %d points took %f ms: " % (numSeeds, time_passed_for_update))
 
 
 def step_flipping(surface, state):
@@ -239,7 +249,7 @@ def event_loop(current_menu):
     while True:
         mouse = pygame.mouse.get_pos()
         fake_screen.fill((161, 200, 207))
-        fake_screen.blit(pic, (1, 1))
+        fake_screen.blit(pic, (0, 0))
         screen.blit(pygame.transform.scale(fake_screen, screen.get_rect().size), (0, 0))
         if zoomActive:
             zoom_area = pygame.Rect(0, 0, *zoom_size)
