@@ -1,6 +1,3 @@
-from turtle import left
-
-
 class VoronoiParabola:
     """
     Binary Tree that holds the parabolas, also itself is a parabola

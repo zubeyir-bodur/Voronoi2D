@@ -1,6 +1,7 @@
 import numpy as np
 import math
 from queue import PriorityQueue
+from fortunes.voronoi_parabola import VoronoiParabola
 from fortunes.voronoi_event import VoronoiEvent
 import pygame
 
@@ -258,6 +259,19 @@ class Voronoi2DFortunes:
         finishEdge(n.left() );
         finishEdge(n.right());
         """
+        if voronoi_parabola.isLeaf:
+            return
+        mx = -1.0
+        if n.edge.direction[0] > 0.0:
+            mx = max(self.width, voronoi_parabola.edge.start[0] + 10)
+        else:
+            mx = min(0.0, voronoi_parabola.edge.start[0] - 10)
+
+        end_vector = (max, mx*voronoi_parabola.edge.f + voronoi_parabola.edge.g)
+        voronoi_parabola.edge.end = end_vector
+        self.points.append(end_vector)
+        self.finish_edge(voronoi_parabola.left_child())
+        self.finish_edge(voronoi_parabola.right_child())
         return
 
     def get_x_of_edge(self, voronoi_parabola, y):
@@ -293,11 +307,40 @@ class Voronoi2DFortunes:
 
         return ry;
         """
-        return
+        left = voronoi_parabola.left_parabola_on_lower_level()
+        right = voronoi_parabola.right_parabola_on_lower_level()
+        p = left.site
+        r = right.site
+
+        delta_p_1 = 2.0*(p[1] - self.beach_line_pos)
+        a1 = 1 / delta_p_1
+        b1 = -2* p[0] / delta_p_1
+        c1 = self.beach_line_pos + delta_p_1/4 + (p[0]**2)/delta_p_1
+
+        delta_p_2 = 2.0*(r[1] - self.beach_line_pos)
+        a2 = 1 / delta_p_2
+        b2 = -2* r[0] / delta_p_2
+        c2 = self.beach_line_pos + delta_p_2/4 + (r[0]**2)/delta_p_2
+
+        a = a1 - a2
+        b = b1 - b2
+        c = c1 - c2
+
+        discriminant = b**2 - 4*a*c
+        x_1 = (-b + math.sqrt(discriminant)) / (2*a)
+        x_2 = (-b - math.sqrt(discriminant)) / (2*a)
+
+        return_y = -1.0
+        if p.y < r.y:
+            return_y = max(x_1, x_2)
+        else:
+            return_y = min(x_1, x_2)
+        return return_y
 
 
     def get_parabola_by_x(self, x):
         """
+        Returns the parabola object on the beach line given the x coordinate
         VParabola par = root;
         float xNew = 0.0;
 
@@ -308,11 +351,21 @@ class Voronoi2DFortunes:
         }
         return par;
         """
-        return
+        new_parbola = self.root_parabola
+        x_new = 0.0
+        while not new_parbola.isLeaf:
+            x_new = self.get_x_of_edge(new_parbola, self.beach_line_pos)
+            if x_new > x:
+                new_parbola = new_parbola.left_child()
+            else:
+                new_parbola = new_parbola.right_child()
+        return new_parbola
 
 
     def get_y(self, parabola_vector, focus_x):
         """
+        Solves y for focus_x in the parabola, given the parabola_vector as
+        the second degree polynomial
         float dp = 2 * (p.y - ly);
         float a1 = 1 / dp;
         float b1 = -2 * p.x / dp;
@@ -320,7 +373,12 @@ class Voronoi2DFortunes:
 
         return (a1*x*x + b1*x + c1);
         """
-        return
+        delta_p = 2.0*(parabola_vector[1] - self.beach_line_pos)
+        a1 = 1 / delta_p
+        b1 = -2* parabola_vector[0] / delta_p
+        c1 = self.beach_line_pos + delta_p/4 + (parabola_vector[0]**2)/delta_p
+        return a1*focus_x*focus_x + b1*focus_x + c1
+
 
     def check_circle(self, voronoi_parabola):
         """
@@ -351,6 +409,30 @@ class Voronoi2DFortunes:
         event.arch = par;
         queue.add(event);
         """
+        left_parent_parabola = voronoi_parabola.left_parabola_on_upper_level()
+        right_parent_parabola = voronoi_parabola.right_parabola_on_upper_level()
+
+        parabola_a = left_parent_parabola.left_parabola_on_lower_level()
+        parabola_c = right_parent_parabola.right_parabola_on_lower_level()
+
+        if parabola_a == None or parabola_c == None or parabola_a.site == parabola_c.site:
+            return
+
+        vector_s = self.get_edge_intersection(left_parent_parabola.edge, right_parent_parabola.edge)
+        if vector_s == None:
+            return
+
+        delta_x = parabola_a.site[0] - vector_s[0]
+        delta_y = parabola_a.site[1] - vector_s[1]
+        delta_distance = math.sqrt(delta_x**2 + delta_y**2)
+        if vector_s[1] - delta_distance >= self.beach_line_pos:
+            return
+
+        new_event = VoronoiEvent((vector_s[0], vector_s[1] - delta_distance), False)
+        self.points.append(new_event.point)
+        voronoi_parabola.circleEvent = new_event
+        new_event.arch = voronoi_parabola
+        self.event_queue.put(new_event)
         return
 
     def get_edge_intersection(self, edge_a, edge_b):
@@ -368,4 +450,20 @@ class Voronoi2DFortunes:
         points.add(p);
         return p;
         """
-        return
+        # Find edge intersections through normals of edges
+        x_intersect = (edge_b.g - edge_a.g) / (edge_a.f - edge_b.f)
+        y_intersect = edge_a.f*x_intersect + edge_a.g
+
+        if (x_intersect - edge_a.start[0]) / edge_a.direction[0] < 0:
+           return None
+        if (y_intersect - edge_a.start[1]) / edge_a.direction[1] < 0:
+           return None
+
+        if (x_intersect - edge_b.start[0]) / edge_b.direction[0] < 0:
+            return None
+        if (y_intersect - edge_b.start[1]) / edge_b.direction[1] < 0:
+            return None
+
+        intersection_point = (x_intersect, y_intersect)
+        self.points.append(intersection_point)
+        return intersection_point
