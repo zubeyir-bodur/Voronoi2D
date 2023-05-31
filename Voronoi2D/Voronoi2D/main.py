@@ -114,7 +114,7 @@ def step_randomized_incremental(surface, state):
         voronoi_edges, voronoi_vertices = incremental_dt.generate_voronoi()
     clock_end = time.time()
     for t in incremental_dt.export_triangles()[0]:
-        pygame.draw.polygon(surface=surface, color=(181, 230, 29), points=[points[t[0]], points[t[1]], points[t[2]]], width=1)
+        pygame.draw.polygon(surface=surface, color=(0, 255, 0), points=[points[t[0]], points[t[1]], points[t[2]]], width=1)
     if state == "VD":
         for v_e in voronoi_edges:
             pygame.draw.line(surface=surface, color="#CC00FF", start_pos=v_e[0], end_pos=v_e[1], width=2)    
@@ -136,7 +136,7 @@ def generate_randomized_incremental(surface, numSeeds):
     voronoi_edges, voronoi_vertices = incremental_dt.generate_voronoi()
     clock_end = time.time()
     for t in incremental_dt.export_triangles()[0]:
-        pygame.draw.polygon(surface=surface, color=(181, 230, 29), points=[points[t[0]], points[t[1]], points[t[2]]], width=1)
+        pygame.draw.polygon(surface=surface, color=(0, 255, 0), points=[points[t[0]], points[t[1]], points[t[2]]], width=1)
     for v_e in voronoi_edges:
         pygame.draw.line(surface=surface, color="#CC00FF", start_pos=v_e[0], end_pos=v_e[1], width=2)    
     for v_v in voronoi_vertices:
@@ -152,10 +152,11 @@ def generate_fortunes(surface, numSeeds):
     global radius
     generate_random_points(numSeeds)
     time_passed_for_update = 0.0
+    time_passed = 0.0
     fortunes_vd = Voronoi2DFortunes(surface, points, SCREEN_HEIGHT + 250, SCREEN_HEIGHT)
     fake_screen = screen.copy()
     while not fortunes_vd.done:
-        surface.fill((76, 98, 122))
+        surface.fill((66, 82, 85))
         clock_start = time.time()
         fortunes_vd.update()
         clock_end = time.time()
@@ -165,8 +166,11 @@ def generate_fortunes(surface, numSeeds):
         screen.blit(pygame.transform.scale(fake_screen, screen.get_rect().size), (0, 0))
         pygame.display.flip()
         clock.tick()
+        clock_end_draw = time.time()
+        time_passed += (clock_end_draw - clock_start)*1000.0
     if TESTING:
         print("The Voronoi diagram with %d points took %f ms: " % (numSeeds, time_passed_for_update))
+        print("The Voronoi diagram with %d points was drawn in %f ms: " % (numSeeds, time_passed))
 
 
 def step_flipping(surface, state):
@@ -183,7 +187,7 @@ def step_flipping(surface, state):
         voronoi_edges, voronoi_vertices = flipping_dt.generate_voronoi()
     clock_end = time.time()
     for t in flipping_dt.export_triangles()[0]:
-        pygame.draw.polygon(surface=surface, color=(181, 230, 29), points=[points[t[0]], points[t[1]], points[t[2]]], width=1)
+        pygame.draw.polygon(surface=surface, color=(0, 255, 0), points=[points[t[0]], points[t[1]], points[t[2]]], width=1)
     if state == "VD":
         for v_e in voronoi_edges:
             pygame.draw.line(surface=surface, color="#CC00FF", start_pos=v_e[0], end_pos=v_e[1], width=2)    
@@ -205,7 +209,7 @@ def generate_flipping(surface, numSeeds):
     voronoi_edges, voronoi_vertices = flipping_dt.generate_voronoi()
     clock_end = time.time()
     for t in flipping_dt.export_triangles()[0]:
-        pygame.draw.polygon(surface=surface, color=(181, 230, 29), points=[points[t[0]], points[t[1]], points[t[2]]], width=1)
+        pygame.draw.polygon(surface=surface, color=(0, 255, 0), points=[points[t[0]], points[t[1]], points[t[2]]], width=1)
     for v_e in voronoi_edges:
         pygame.draw.line(surface=surface, color="#CC00FF", start_pos=v_e[0], end_pos=v_e[1], width=2)    
     for v_v in voronoi_vertices:
@@ -218,7 +222,7 @@ def generate_flipping(surface, numSeeds):
 
 def clear(surface):
     no_of_points = ""
-    surface.fill((76, 98, 122))
+    surface.fill((66, 82, 85))
     global points
     global center
     center = ((SCREEN_HEIGHT + 250) / 2, SCREEN_HEIGHT / 2)
@@ -232,13 +236,13 @@ def event_loop(current_menu):
     if current_menu == 0:
         pygame.display.set_caption("Randomized Incremental Algorithm")
     elif current_menu == 1:
-        pygame.display.set_caption("Fortube's Algorithm")
+        pygame.display.set_caption("Fortune's Algorithm")
     elif current_menu == 2:
         pygame.display.set_caption("Flipping Algorithm")
 
     fake_screen = screen.copy()
     pic = pygame.surface.Surface((SCREEN_HEIGHT + 250, SCREEN_HEIGHT))
-    pic.fill((76, 98, 122))
+    pic.fill((66, 82, 85))
     clear(pic)
     zoom_size = (round(SCREEN_HEIGHT / zoom), round(SCREEN_HEIGHT / zoom))
 
@@ -248,7 +252,7 @@ def event_loop(current_menu):
     next_step_fsm = NextStepFSM()
     while True:
         mouse = pygame.mouse.get_pos()
-        fake_screen.fill((161, 200, 207))
+        fake_screen.fill((198, 246, 255))
         fake_screen.blit(pic, (0, 0))
         screen.blit(pygame.transform.scale(fake_screen, screen.get_rect().size), (0, 0))
         if zoomActive:
@@ -314,7 +318,7 @@ def event_loop(current_menu):
                         clear(pic)
                         no_of_points = ""
                     else:
-                        pic.fill((76, 98, 122))
+                        pic.fill((66, 82, 85))
                     out = next_step_fsm.next_state()
 
                     if out == "DT":
@@ -358,7 +362,7 @@ def main_menu():
     pygame.display.set_caption("CS 478 Project - Implementing Three Voronoi Diagram Computation Algorithms " 
                                + "and Comparing Their Performance")
     clear(screen)
-    screen.fill((161, 200, 207))
+    screen.fill((198, 246, 255))
     while True:
         mouse = pygame.mouse.get_pos()
 

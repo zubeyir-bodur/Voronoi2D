@@ -19,10 +19,10 @@ class VoronoiEvent:
             return self.y > other.y
         else: 
             return False
+    
 
-
-    #def compare_with_event(self, another_event):
-    #    return -1 if (self.y > another_event.y) else 1
+    def __hash__(self):
+        return hash(id(self))
 
 
     def __str__(self):
