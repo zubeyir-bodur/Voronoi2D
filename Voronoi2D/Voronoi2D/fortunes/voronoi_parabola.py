@@ -9,7 +9,7 @@ class VoronoiParabola:
         self.parent = None          # Parent parabola
         self.edge = None            
         self.circleEvent = None
-        self.isLeaf = False         # True if there is no left or right child
+        self.isLeaf = True         # True if there is no left or right child
     
 
     def __init__(self, site_vector):
