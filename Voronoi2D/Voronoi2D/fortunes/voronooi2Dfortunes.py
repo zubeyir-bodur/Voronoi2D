@@ -80,10 +80,12 @@ class Voronoi2DFortunes:
             # Draw line from p0 to p1
             if p0 != (float('nan'), float('nan')) and p1 != (float('nan'), float('nan')) and p0 != None and p1 != None:
                 pygame.draw.line(surface=self.surface, color="#CC00FF", start_pos=p0, end_pos=p1, width=2)
-        # Draw sweep line
-        pygame.draw.line(surface=self.surface, color="#000000", start_pos=(0, self.sweep_line_pos), end_pos=(self.width, self.sweep_line_pos), width=2)
-        # Draw beach line
-        self.draw_beach_line()
+        # if not finished
+        if not self.done:
+            # Draw sweep line
+            pygame.draw.line(surface=self.surface, color="#000000", start_pos=(0, self.sweep_line_pos), end_pos=(self.width, self.sweep_line_pos), width=2)
+            # Draw beach line 
+            self.draw_beach_line()
         # Draw the voronoi site points as a circle
         for v_site_point in self.places:
             pygame.draw.circle(self.surface, "#FF0000", v_site_point, 2)
@@ -236,7 +238,7 @@ class Voronoi2DFortunes:
         self.points.append(end_vector)
         self.finish_edge(voronoi_parabola.left_child())
         self.finish_edge(voronoi_parabola.right_child())
-        return
+
 
     def get_x_of_edge(self, voronoi_parabola, y):
         """
