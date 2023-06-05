@@ -5,6 +5,7 @@ __pycache__/
 .vs/
 Voronoi2D/.vs
 flipping2.py
+*.txt
 
 # C extensions
 *.so
